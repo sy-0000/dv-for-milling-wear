@@ -1,0 +1,22 @@
+{
+ "machine": "machine tool 1-3",
+ "tool": "tool 1-9",
+ "run": "run counter per tool (gaps not counted)",
+ "C_s": "cumulated tool contact time before run [s] (h5 attr says 'min' but values are seconds)",
+ "VB_um": "flank wear width [um]; mostly linearly interpolated between microscope measurements",
+ "x_pos_mm": "mean tool_position_x during cut [mm] (which pass within a layer)",
+ "cut_s": "detected cutting duration [s] (incl. trimmed ends)",
+ "axis_type": "torque (M1, ball screw, Nm) or force (M2/M3, linear drive, N)",
+ "Fx_mean/Fy_mean/Fz_mean": "mean force [N]",
+ "Fx_std/Fy_std/Fz_std": "std of force [N]",
+ "Fxy_mean/Fxy_rms/Fxy_p99": "XY resultant force mean / RMS / 99th pct [N]",
+ "F3_mean": "3D resultant force mean [N]",
+ "A_tooth": "spectral amplitude at tooth-pass freq 530 Hz, sqrt(Ax^2+Ay^2) [N]",
+ "A_spindle": "spectral amplitude at spindle freq 133 Hz (edge imbalance / runout) [N]",
+ "runout_ratio": "A_spindle / A_tooth [-]",
+ "entry_peak/exit_peak": "max |Fxy| in first/last 0.3 s of the (untrimmed) cut [N]",
+ "Tsp_mean/Tsp_std": "|torque_spindle| mean / std [Nm] (sign convention differs by machine)",
+ "ax_x_mean/ax_y_mean/ax_z_mean": "|torque_axis| [Nm] (M1) or |force_axis| [N] (M2/M3) mean",
+ "ax_y_std": "std of axis_y signal",
+ "pcd_x_std/pcd_y_std": "std of position control deviation [mm]"
+}
