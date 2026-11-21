@@ -2,3 +2,4 @@
 data/raw/
 *.h5
 __pycache__/
+data/*.log
