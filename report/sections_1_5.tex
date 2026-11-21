@@ -1,11 +1,18 @@
 % ============================================================
 % WearLens report -- Sections 1-5 (revision 2, after AI review round 1)
 % Replaces sections_2_5.tex. Paste into the course LaTeX template.
-% Packages: booktabs, tabularx, graphicx, hyperref (for \url).
+% No extra packages required. booktabs / hyperref / graphicx are used when the template loads them;
+% otherwise the fallbacks below are used. Upload report/figs/motivation.pdf to figs/ next to your main .tex.
 % Every number is traceable to the repository (data/verify_expected.json, data/eda_*.csv).
 % Lines marked TODO need team input or a citation you have checked yourselves.
 % Naming: end mills are E1-E9 (the dataset calls them T1-T9); tasks are T1-T7.
 % ============================================================
+
+% ---------- fallbacks so the file compiles in any template ----------
+\providecommand{\toprule}{\hline}
+\providecommand{\midrule}{\hline}
+\providecommand{\bottomrule}{\hline}
+\providecommand{\url}[1]{\texttt{#1}}
 
 % ---------- 1. Basic information (put into the template's title block) ----------
 % \title{WearLens: Visual Analytics of End-Mill Wear across Machine Tools}
@@ -51,19 +58,19 @@ force sensor below the workpiece (25\,kHz).
 \centering\small
 \caption{Attributes used by WearLens (one value per run unless noted).}
 \label{tab:data}
-\begin{tabularx}{\linewidth}{@{}lp{2.6cm}X@{}}
+\begin{tabular}{@{}p{0.25\linewidth}p{0.21\linewidth}p{0.42\linewidth}@{}}
 \toprule
 Attribute & Type & Description \\
 \midrule
 Machine, end mill & categorical & 3 machines, 9 end mills (3 per machine) \\
 Run & ordinal & pass counter per end mill (removed runs not counted) \\
-Contact time $C$ & quantitative [s] & cumulated cutting time before the run \\
-Flank wear VB & quantitative [$\mu$m] & microscope measurement, see limitations \\
+Contact time $C$ & quant.\ [s] & cumulated cutting time before the run \\
+Flank wear VB & quant.\ [$\mu$m] & microscope measurement, see limitations \\
 Layer, pass position & ordinal, quant.\ [mm] & derived from the tool position \\
 Machine signals & time series, 500\,Hz & spindle torque; feed-drive torque (M1, ball screw) or force (M2/M3, linear motor); position control deviation (commanded minus actual position) \\
 Dynamometer forces & time series, 25\,kHz & $F_x, F_y, F_z$; reference only (Section~\ref{sec:users}) \\
 \bottomrule
-\end{tabularx}
+\end{tabular}
 \end{table}
 
 \paragraph{Preprocessing (Python, offline).}
@@ -132,7 +139,12 @@ structure, and the dataset does not record the cause.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\linewidth]{figs/motivation}
+\ifdefined\includegraphics
+  \IfFileExists{figs/motivation.pdf}{\includegraphics[width=\linewidth]{figs/motivation}}%
+    {\fbox{\parbox{0.9\linewidth}{\centering Missing file: upload report/figs/motivation.pdf as figs/motivation.pdf}}}
+\else
+  \fbox{\parbox{0.9\linewidth}{\centering Load graphicx in the preamble to show Fig.~1}}
+\fi
 \caption{(a) Wear curves of all end mills. (b) Raw spindle torque against wear: the levels differ by
 machine, so raw values cannot be compared directly. Colour and line style encode the machine.}
 \label{fig:motivation}
@@ -163,19 +175,19 @@ by more than a user-set percentage.
 \centering\small
 \caption{Low-level tasks (end mills are E1--E9; tasks are T1--T7).}
 \label{tab:tasks}
-\begin{tabularx}{\linewidth}{@{}lXll@{}}
+\begin{tabular}{@{}p{0.07\linewidth}p{0.66\linewidth}p{0.14\linewidth}@{}}
 \toprule
-ID & Task & Type & From \\
+ID & Task (task type) & From \\
 \midrule
-T1 & Overview the wear curves of all end mills and compare in which wear phase the machines differ & overview, compare & CH1 \\
-T2 & For a chosen VB limit, compare the unused life and the overrun of fixed-time replacement rules & compare, derive & CH1 \\
-T3 & Rank features by Spearman rank correlation with VB for each end mill and pooled, and compare the ranking between normalizations and contact-time ranges & rank, correlate & CH2 \\
-T4 & Compare the normalized trend of one feature across the three machines & compare & CH2 \\
-T5 & Identify layers with a layer flag above a user-set percentage & detect outliers & CH3 \\
-T6 & Inspect the signals of a flagged run against a run of the previous layer, and check whether machine signals and dynamometer agree & details on demand, verify & CH3 \\
-T7 & Calibrate an alarm level on two machines, test it on the third, and read the alarm error in minutes for different persistence settings & derive, compare & CH1+CH2 \\
+T1 & Overview the wear curves of all end mills and compare in which wear phase the machines differ \emph{(overview, compare)} & CH1 \\
+T2 & For a chosen VB limit, compare the unused life and the overrun of fixed-time replacement rules \emph{(compare, derive)} & CH1 \\
+T3 & Rank features by Spearman rank correlation with VB, per end mill and pooled, and compare the ranking between normalizations and contact-time ranges \emph{(rank, correlate)} & CH2 \\
+T4 & Compare the normalized trend of one feature across the three machines \emph{(compare)} & CH2 \\
+T5 & Identify layers whose layer flag exceeds a user-set percentage \emph{(detect outliers)} & CH3 \\
+T6 & Inspect the signals of a flagged run against a run of the previous layer and check whether machine signals and dynamometer agree \emph{(details on demand, verify)} & CH3 \\
+T7 & Calibrate an alarm level on two machines, test it on the third, and read the alarm error in minutes for different persistence settings \emph{(derive, compare)} & CH1, CH2 \\
 \bottomrule
-\end{tabularx}
+\end{tabular}
 \end{table}
 
 % ---------------- bibliography entry (add to your .bib) ----------------
