@@ -1,63 +1,61 @@
-# Demo 腳本
+# Demo 腳本(修訂版)
 
-> ⚠️ 老師規定:現場 demo 每組約 **5 分鐘 demo + 5 分鐘問答**;影片 **4–6 分鐘、需英文旁白或字幕**。
-> 下面的 **3 分鐘核心版**是原本規劃的長度,**5 分鐘完整版**是在核心版之外加上 ⊕ 標記的段落。影片可以直接用 5 分鐘版加英文旁白。
-> 所有數字都已在 `docs/07_verification.md` 核對過。
+> 老師規定:現場 demo 約 **5 分鐘 + 5 分鐘問答**;影片 **4–6 分鐘,需英文旁白或字幕**。
+> **3 分鐘核心版** = 0:00–3:00;**5 分鐘完整版**再加上標 ⊕ 的段落。
+> 數字來自 `data/verify_expected.json`,網頁顯示已由 `scripts/verify_app.js` 核對。刀具名稱為 **E1–E9**。
 
-事前準備:瀏覽器縮放 110%;按 **Reset selections**;門檻 140 µm;正規化選 × tool reference。
+事前準備:瀏覽器縮放 110%;按 **Reset selections**;正規化選 **× own first 3–6 min**;VB 門檻 140 µm。
 
 ---
 
-## 0:00–0:30 開場:使用者與挑戰
-**做什麼**:停在首頁,滑鼠指標指向標題列。
-**說(中)**:我們的使用者是要在多台機台導入刀具監控的製程工程師。現場三個問題:刀什麼時候換、哪個機台訊號能代替顯微鏡、訊號變了是不是真的磨耗。產線上沒有測力計,所以主要指標只用機台控制器訊號。
-**EN**: "WearLens is for process engineers who want to roll out tool-condition monitoring across a fleet of machine tools. They face three questions: when to replace a tool, which built-in machine signal can replace the microscope, and whether a signal change is really wear. In production there is no dynamometer, so our main indicators are machine-control signals only."
+## 0:00–0:25 開場
+**說**:使用者是要在多台機台導入刀具監控的製程工程師,產線上只有機台控制器的訊號。他們有三個問題:該用什麼換刀規則、哪個訊號可以取代顯微鏡、訊號變了是不是真的磨耗。
+**EN**: "WearLens supports process engineers who introduce tool-condition monitoring on several machine tools. In production they only have machine-control signals. They need to choose a replacement rule, find a signal that can replace the microscope, and tell real wear from other signal changes."
 
-## 0:30–1:20 ① 換刀策略(V1 + V2)
-**做什麼**:按 **① Replacement strategy**。指向 V1 的三列,再指向 V2。
-**說**:同型號的刀,M2 的三把磨到 140 µm 要 81–84 分鐘,M1、M3 只要 53–58 分鐘。如果全廠用同一個換刀時間 53.5 分鐘,M2 的刀會浪費 34–36% 的壽命。
-**做什麼**:按 V2 的 **one time per machine**。
-**說**:改成每台機台各自訂時間,平均浪費只剩約 2%。但要注意,M2 的刀全是批次 B,機台和批次的影響分不開(指向圖說)。
-**EN**: "M2 tools need 81–84 minutes to reach 140 µm, M1 and M3 tools only 53–58. One fleet-wide replacement time leaves 34–36 % of every M2 tool unused; one time per machine cuts that to about 2 %. Caveat: all M2 tools come from a different batch, so machine and batch effects are confounded."
+## 0:25–1:10 ① 固定時間規則(V1、V2)
+**做**:按 **①**。指向 V1 三列 → V2。
+**說**:如果全廠用同一個換刀時間 53.5 分鐘,M2 的刀會浪費 34–36% 的壽命。**做**:按 **fixed time · per machine** → 平均浪費約 2%。**說**:但 M2 的刀全來自另一個批次,所以這不一定是機台的功勞。而且每台機台各自訂時間,前提是要先跑過整把刀的壽命。能不能改用訊號?
+**EN**: "One fixed time for all machines leaves 34–36 % of every M2 end mill unused; one time per machine cuts that to about 2 %. But the M2 end mills come from a different batch, and a per-machine time needs complete tool lives first. Can a signal do better?"
 
-## 1:20–2:20 ② 選一個產線指標(V3 + V4)
-**做什麼**:按 **② Choose an indicator**。指向 V3 上半部(機台訊號)。
-**說**:V3 是每個特徵和磨耗的相關。上半部是產線拿得到的訊號,下半部灰色的是測力計,只當參考。主軸扭矩在 9 把刀都 ≥ 0.97。
-**做什麼**:把正規化切成 **raw**,指 V3 的 All 欄(主軸扭矩約 .57),再切回 **× tool reference**(.97)。
-**說**:原始值不能跨機台比較,三台機台的起點不同;除以每把刀磨合期之後的參考值,就可以放在一起比。
-**做什麼**:指向 V4 的紫色帶。
-**說**:到 140 µm 時,9 把刀的主軸扭矩都落在參考值的 1.2–1.32 倍。所以「主軸扭矩上升約 25%」有機會當作不用顯微鏡的換刀警示,但只有 9 把刀,這是假說,不是結論。
-**EN**: "Spindle torque follows wear in all nine tools. Raw values don't transfer across machines, but relative to each tool's own post-break-in level, all nine tools reach 1.2 to 1.32 times that level at 140 µm. A rise of about 25 % in spindle torque is a candidate microscope-free alarm — a hypothesis to validate, since we only have nine tools."
+## 1:10–2:10 ② 找指標,並測試能不能跨機台(V3、V4、V2)
+**做**:按 **②**。指向 V3 上半部。
+**說**:正規化用新刀前 3–6 分鐘的水準,這在產線上做得到。主軸扭矩在每把刀都 ≥ 0.97,9 把合併 0.95。V4 也可以看到三台機台的曲線同方向上升。
+**做**:V2 切到 **signal alarm**(預設是用另外兩台機台校正)。
+**說**:用 M2、M3 校正的警示值拿到 M1 測試,其他機台依此類推。結果 M1、M2 提早 6–15 分鐘警示,**M3 三把刀完全沒觸發**。**做**:改成 **calibrated on own machine** → 平均誤差 3.2 分鐘。**說**:所以趨勢可以跨機台,警示值不行,每台機台至少需要一把試驗刀來校正。
+**EN**: "With a production-feasible normalization, spindle torque follows wear in every end mill. But a level calibrated on the other two machines alarms 6 to 15 minutes early on M1 and M2 and never on M3. Calibrated on its own machine, the mean error drops to 3.2 minutes. The trend transfers, the alarm level does not: each machine needs at least one calibration tool."
 
-## 2:20–3:00 ③ 檢查可疑變化(V5 + V6)
-**做什麼**:按 **③ Check suspicious changes**(T1)。指向 V5 上方的紫色 **J** 旗標(第 15 層)。點旗標前一層的一個 run,按 **pin as comparison**,再點第 15 層的一個 run。
-**說**:T1 第 15 層主軸扭矩整層跳高約 20%,下一層又回落。V6 中機台訊號和測力計參考兩套獨立系統同時跳,所以不是感測器問題。但磨耗不會倒退,所以這段的變化不完全是磨耗。如果只看指標,會誤以為磨耗突然加速、提早換刀。
-**EN**: "In T1, layer 15 jumps by about 20 % and then drops back. Both the machine signal and the dynamometer reference show it, so it isn't a sensor glitch — but wear can't go backwards. Without drilling down, an alarm based on the indicator alone would fire too early."
+## 2:10–3:00 ③ 誤報(V5、V6、V2)
+**做**:按 **③**(E1,訊號警示)。指向 V5 第 15 層的 **J** 和 ▼ 警示。
+**說**:E1 在 VB 103 就觸發警示,比該換的時間早 12 分鐘。原因是第 15 層整層扭矩跳高,下一層又回落,而磨耗不會倒退。**做**:點第 14 層一個 run → **pin** → 點第 15 層一個 run。**說**:V6 裡機台訊號和測力計參考同時跳高,所以不是感測器問題,而是和換層有關的變化。
+**做**:V2 把延續條件設成 **30**。**說**:要求超過一整層都高於警示值,E1 的誤報就消失了,警示改成只早 0.5 分鐘。
+**EN**: "End mill E1 alarms at VB 103, 12 minutes too early, because the whole of layer 15 jumps and then drops back. Wear cannot go backwards. Requiring the level to persist for more than one layer removes this false alarm."
 
-**(3 分鐘核心版到此結束,可以接一句總結)**
+**(3 分鐘版到此結束)**
 
-## ⊕ 3:00–4:00 補充:T9 的層內鋸齒,以及連動操作
-**做什麼**:在 V5 下拉選 **T9**,特徵選 **Force |Fxy|, mean**(測力計參考)。指向第 10–14 層的 **R** 旗標。
-**說**:T9 每一層內的力上升 26–52%,換層時又重置,主軸扭矩也有同步但較小(每層 5–7%)的鋸齒。這和換層同步,可能跟換層停機量 VB 有關,但資料中沒有紀錄能證實,我們只把它標記出來,交給工程師判斷。
-**做什麼**:在 V1 拖曳一段時間範圍,讓觀眾看 V3 重新排序(有動畫)、V4 淡化範圍外的點;再在 V4 框選一群點,看 V1、V5 同步高亮。
-**EN**: "Linking: brushing a time range in V1 re-ranks the features in V3 and fades the other runs in V4; brushing points in V4 highlights them in V1 and V5."
+## ⊕ 3:00–3:50 取捨和 E9
+**做**:V2 改成 **calibrated on own machine**,延續條件保持 30。**說**:同樣的設定在這裡會讓 5 把刀漏報。延續條件是誤報和漏報之間的取捨,這要由工程師決定,不是演算法。
+**做**:V5 下拉選 **E9**。**說**:E9 每層內扭矩上升 5–7%,而 VB 100 到 140 之間扭矩倍數只差約 0.06–0.09,所以這種層內變化不能忽略。
+**EN**: "The same persistence makes five end mills miss the alarm when the level is calibrated on the own machine. That trade-off between false and missed alarms is a decision for the engineer."
 
-## ⊕ 4:00–4:40 總結:回到三個挑戰
+## ⊕ 3:50–4:20 連動
+**做**:在 V1 拖曳一段時間範圍 → V3 重新排序(有動畫)、V4 淡化範圍外的點;在 V4 框選 → V1、V5 同步高亮。
+
+## ⊕ 4:20–4:50 總結
 **說**:
-1. 換刀:依機台訂時間,可以把浪費從約 35% 降到約 2%。
-2. 指標:主軸扭矩加上依刀具正規化,是跨機台最一致的產線訊號。
-3. 誤報:層級旗標加上下鑽比對,可以分辨真正的磨耗和換層造成的變化。
-限制:VB 大多是內插值,只有 9 把刀,M2 的機台和批次效應混淆。
-**EN**: "Back to the three challenges: per-machine replacement times cut unused life from about 35 % to about 2 %; normalized spindle torque is the most consistent production signal across machines; and layer flags plus drill-down separate real wear from layer-related changes. Limitations: interpolated VB labels, nine tools, and machine–batch confounding."
+1. 每台機台各自訂時間,可以大幅減少浪費,但可能混著批次效應。
+2. 主軸扭矩的趨勢可以跨機台,警示值要每台機台各自校正。
+3. 層級旗標加上延續條件,可以處理和換層有關的誤報,但會換來漏報,必須權衡。
+限制:VB 大多是內插值、只有 9 把刀、機台和批次效應混淆。
+**EN**: "Per-machine replacement times cut unused life, but may reflect the tool batch. Spindle-torque trends transfer across machines, alarm levels need per-machine calibration. Layer flags and persistence handle layer-related false alarms at the cost of missed ones. Limitations: interpolated VB, nine tools, machine–batch confounding."
 
 ---
 
-## 預想問題(依老師的 AI 審查格式準備)
-| 可能被問的問題 | 回答重點 |
+## 預想問題
+| 問題 | 回答重點 |
 |---|---|
-| 為什麼不直接訓練模型預測 VB? | 只有 9 把刀,無法驗證能否套用到新機台;VB 大多是內插的;異常需要人解釋;工程師要先看到證據才敢在產線上用 |
-| ρ ≈ 0.99 不是太高了嗎? | 對,單把刀內 VB 是依時間內插的,會高估。所以我們看跨機台合併後的 ρ,以及 V4 曲線是否重疊,而不是只看單把刀的 ρ |
-| 為什麼用 VB 50–60 µm 當參考? | 三台機台的刀都會快速磨過磨合期;T8 缺早期資料,但也有這段區間,所以 9 把刀都能用 |
-| M2 壽命長是因為機台嗎? | 無法確定,M2 的刀全是批次 B,我們在 V2 圖說和報告限制中都有標註 |
-| 層級旗標的門檻怎麼定? | 依 9 把刀所有層的分布:主軸扭矩的層間跳動第 95 百分位數約 1%,T1 第 15 層 19%;預設 5%,使用者可以調整 |
-| 測力計產線沒有,為什麼還要顯示? | 它是試驗階段的「參考答案」,用來驗證機台訊號;介面上一律灰色並標「reference only」 |
+| 新刀不知道全壽命,怎麼正規化? | 用前 3–6 分鐘的水準,不需要顯微鏡,也不用未來的資料;滑動中位數也只看過去 15 個 run |
+| 為什麼依機台訂時間?可能是批次的原因 | 同意。系統和報告都有標註。這也是我們改看訊號警示的理由之一 |
+| 系統能做到什麼是靜態報告做不到的? | 規則、校正方式、延續條件、門檻的組合很多,每改一個,誤報和漏報都會一起變,需要即時看結果才能取捨 |
+| 只有機台訊號,看得出 E9 的鋸齒嗎? | 扭矩每層上升 5–7%,幅度小,但和 VB 100–140 之間的訊號差(約 0.06–0.09 倍)相當,所以會影響警示 |
+| 為什麼不用自動模型? | 只有 9 把刀;用其他機台校正的測試已經顯示警示值無法跨機台;規則的取捨需要人決定 |
+| 0.95 的相關不就夠了嗎? | 相關高只代表趨勢一致。用其他機台校正的測試才是真正的考驗,而這個測試的結果是誤差 6–15 分鐘,M3 全部漏報 |

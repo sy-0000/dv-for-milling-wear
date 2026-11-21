@@ -3,7 +3,7 @@
 資料視覺化期末專題(D3.js VA 系統)。系統名稱 WearLens 為暫定名稱。
 
 - **目標使用者**:要在多台機台導入刀具狀態監控的製程/設備工程師。設定為產線上**沒有測力計**,只有機台控制器訊號;測力計只是試驗時的參考。
-- **資料**:Denkena, Klemme & Stiehl (2023), *Data in Brief* 50:109574;Mendeley Data doi:10.17632/zpxs87bjt8(CC BY 4.0)。9 把端銑刀 × 3 台機台,共 6,418 個 run。
+- **資料**:Denkena, Klemme & Stiehl (2023), *Data in Brief* 50:109574;Mendeley Data doi:10.17632/zpxs87bjt8(CC BY 4.0)。9 把端銑刀(本專案稱 E1–E9,原始檔名中為 T1–T9)× 3 台機台,共 6,418 個 run。
 
 ## 快速開始(看系統)
 1. 用 VS Code Live Server 開啟 `web/index.html`,或在 `web/` 資料夾執行下面的指令,再開啟 http://localhost:8000:
