@@ -72,6 +72,19 @@ const out = process.argv[2] || ".";
     .find((t) => t[0] === "E1 M1"));
   const a1 = exp.alarm_other_p29["1"];
   check("V2 E1 label (other, persist 29)", e1[1], `${(-a1.err_min).toFixed(1)} min early · VB ${a1.VB_alarm}`);
+  await p.fill("#v2-persist", "30");
+  await p.dispatchEvent("#v2-persist", "change");
+  await p.waitForTimeout(500);
+  sum = await p.textContent("#v2-summary");
+  check("V2 signal (other, persist 30)", sum.includes(errStats(exp.alarm_other_p30)), true);
+  const e1b = await p.$$eval("#v2 svg > g > g", (gs) => gs.map((g) => [...g.querySelectorAll("text")].map((t) => t.textContent))
+    .find((t) => t[0] === "E1 M1"));
+  const a1b = exp.alarm_other_p30["1"];
+  check("V2 E1 label (other, persist 30)", e1b[1], `${(-a1b.err_min).toFixed(1)} min early · VB ${a1b.VB_alarm}`);
+  await p.check('input[name=cal][value="own"]');
+  await p.waitForTimeout(500);
+  sum = await p.textContent("#v2-summary");
+  check("V2 signal (own, persist 30)", sum.includes(errStats(exp.alarm_own_p30)), true);
   console.table(res);
   const cdp = await p.context().newCDPSession(p);
   for (const t of ["deuteranopia", "protanopia", "tritanopia"]) {

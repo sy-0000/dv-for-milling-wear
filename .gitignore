@@ -3,3 +3,9 @@ data/raw/
 *.h5
 __pycache__/
 data/*.log
+report/*.aux
+report/*.log
+report/*.out
+report/*.bbl
+report/*.blg
+report/*.pdf

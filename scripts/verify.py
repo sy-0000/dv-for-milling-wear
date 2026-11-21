@@ -98,8 +98,9 @@ def alarms(cal, persist):
 
 exp = dict(life_at_140=life, fleet_fix=round(fix, 1), unused_pct=unused,
            band_lo=round(min(band), 3), band_hi=round(max(band), 3), rho_all=round(float(rho_all), 2),
-           alarm_other_p1=alarms("other", 1), alarm_other_p29=alarms("other", 29), alarm_own_p1=alarms("own", 1))
-for k in ["alarm_other_p1", "alarm_other_p29", "alarm_own_p1"]:
+           alarm_other_p1=alarms("other", 1), alarm_other_p29=alarms("other", 29), alarm_own_p1=alarms("own", 1),
+           alarm_other_p30=alarms("other", 30), alarm_own_p30=alarms("own", 30))
+for k in ["alarm_other_p1", "alarm_other_p29", "alarm_own_p1", "alarm_other_p30", "alarm_own_p30"]:
     e = [v["err_min"] for v in exp[k].values() if v["err_min"] is not None]
     miss = sum(v["C_alarm"] is None for v in exp[k].values())
     print(f"{k}: errors {e} | missed {miss} | mean|err| {np.mean(np.abs(e)):.1f} min")
