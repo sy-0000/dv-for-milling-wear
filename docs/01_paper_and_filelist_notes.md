@@ -72,3 +72,21 @@ HDF5 結構:`labels/`、`signals_machine/`、`signals_sensor/` 三個 group。
 - 相鄰 run 的 C 差距:中位數 4 s,也就是一個 run 大約切削 4 秒。偶爾會跳到約 24 s,這是被刪掉的 run 造成的。T8 最大有 117 s 的缺口。
 - M2 的刀到達 VB 100 µm 大約需要 4,000–4,140 s(約 67–69 分鐘),M1/M3 約 2,380–2,790 s(約 40–47 分鐘)。M2 長約 50–70%,但這和刀具批次混淆在一起(見第 1 節)。
 - M2 三把刀的最大 VB 只有 147–149 µm,沒有一把達到 150。所以如果門檻用 ≥150 µm,M2 會變成「沒有壽命終點」,門檻定義必須小心。
+
+## 6. 開檔核對(`scripts/inspect_h5.py`;樣本:M1T1R1、M1T1R609、M2T4R100)
+
+| 檢查 | 論文寫法 | 檔案實際內容 | 判斷 |
+|---|---|---|---|
+| 結構 | labels / signals_machine / signals_sensor | 相同;每個訊號是 shape (1, N) 的 float32 | ✅ 一致 |
+| 取樣率 | 500 Hz / 25 kHz | 2206 點 / 4.41 s = 500 Hz;110250 / 4.41 = 25,000 Hz | ✅ 一致 |
+| C 的單位 | s | 檔案 attr 寫 `min`,但數值 3458 若是分鐘就等於 57 小時,不合理 | ⚠️ attr 標錯,實際應為秒 |
+| position_control_deviation 的單位 | µm | attr 寫 `mm`,數值約 0.001 mm(= 1 µm,與論文 Fig. 4 吻合) | ⚠️ 單位標示不同,以檔案 mm 為準 |
+| force_axis 的單位 | N | attr 寫 `Nm` | ⚠️ attr 標錯,應為 N |
+| force_axis 的 key | Table 2 寫三次 `_x` | 實際為 `force_axis_x/y/z` | ✅ 論文 Table 2 排版錯誤 |
+| torque_spindle 的正負號 | 未說明 | M1 為負值、M2 為正值 | ⚠️ 各機台符號慣例不同,萃取特徵時要取絕對值 |
+| run 長度 | 未說明 | 一個檔案約 4.4–4.5 s,但真正切削只有約 0.2–4.0 s(與 C 每個 run 增加約 4 s 一致) | 特徵要先切出切削區段 |
+| 切削區段判斷 | — | tool_position_z 在 0.05 s 就降到 −2 mm,比真正吃刀早;吃刀時機要看力或扭矩 | 用力或扭矩門檻切段 |
+
+圖:`docs/figs/m1t1_new_vs_worn.png`(同一把刀第一個 run 與最後一個 run 的原始訊號)。
+- 磨耗後,torque_axis_x 約從 0.75 增加到 1.6 Nm,force_sensor_x/y 的振幅明顯變大,|torque_spindle| 約從 1.0 增加到 1.45 Nm。
+- 但這只是兩個 run 的比較,而且兩者在工件上的位置不同(x = 11 vs 163 mm),還不能當成結論。
