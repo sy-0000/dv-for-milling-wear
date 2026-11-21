@@ -20,7 +20,7 @@ function render() {
   x = d3.scaleLinear().domain([0, 90]).range([0, iw]);
   y = d3.scaleLinear().domain([0, 165]).range([ih, 0]);
   const svg = root.append("svg").attr("width", W).attr("height", H * 3 + 14)
-    .attr("role", "img").attr("aria-label", "Wear curves of tools T1 to T9");
+    .attr("role", "img").attr("aria-label", "Wear curves of end mills E1 to E9");
   ctx.tools.forEach((t, k) => {
     const rs = ctx.runs.filter((r) => r.tool === t), m = rs[0].machine;
     const g = svg.append("g").attr("transform", `translate(${(k % 3) * cw + M.l},${Math.floor(k / 3) * H + M.t})`);
@@ -34,7 +34,7 @@ function render() {
       .attr("d", d3.line().x((r) => x(r.C_min)).y((r) => y(r.VB_um)));
     g.append("g").attr("class", "marks");
     const title = g.append("text").attr("x", 4).attr("y", -4).attr("font-weight", 600).style("cursor", "pointer")
-      .text(`T${t} · M${m}`);
+      .text(`E${t} · M${m}`);
     const note = ctx.meta.tool_notes[t];
     if (t === 8) g.append("text").attr("class", "note halo").attr("x", iw - 2).attr("text-anchor", "end").attr("y", ih - 4).text("no data before C = 3 min");
     if (note) title.append("title").text(note);
@@ -53,7 +53,7 @@ function render() {
       .on("mousemove.tip", (ev) => {
         const cx = x.invert(d3.pointer(ev)[0]);
         const r = rs[d3.bisector((d) => d.C_min).center(rs, cx)];
-        ctx.tip.show(`<b>T${t}</b> (M${m}) · run ${r.run}<br>C = ${r.C_min.toFixed(1)} min · VB = ${r.VB_um} µm<br>`
+        ctx.tip.show(`<b>E${t}</b> (M${m}) · run ${r.run}<br>C = ${r.C_min.toFixed(1)} min · VB = ${r.VB_um} µm<br>`
           + `<span class="muted">layer ${r.layer}; VB mostly interpolated between microscope measurements</span>`, ev);
       })
       .on("mouseleave.tip", () => ctx.tip.hide());

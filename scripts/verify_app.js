@@ -20,10 +20,10 @@ const out = process.argv[2] || ".";
   // V2 fleet line + unused labels (default threshold 140, fleet mode)
   const fixLabel = await p.textContent("#v2 .fixline text");
   check("V2 fleet replacement time", fixLabel, `${exp.fleet_fix.toFixed(1)} min`);
-  const labels = await p.$$eval("#v2 svg > g > g", (gs) => gs.filter((g) => g.querySelector("text")?.textContent?.startsWith("T"))
+  const labels = await p.$$eval("#v2 svg > g > g", (gs) => gs.filter((g) => g.querySelector("text")?.textContent?.startsWith("E"))
     .map((g) => [...g.querySelectorAll("text")].map((t) => t.textContent)));
   labels.forEach(([tool, lab]) => {
-    const t = tool.match(/T(\d)/)[1];
+    const t = tool.match(/E(\d)/)[1];
     const u = exp.unused_pct[t];
     const want = u > 0 ? `unused ${u} %` : (lab.startsWith("replaced") ? "replaced at threshold" : "unused 0 %");
     check(`V2 ${tool}`, lab, want);
@@ -38,7 +38,7 @@ const out = process.argv[2] || ".";
     const cells = [...r.querySelectorAll("g.cell text")];
     return cells[cells.length - 1].textContent;
   });
-  check("V3 pooled rho Tsp_mean", rho, exp.rho_all_Tsp_ratio.toFixed(2).replace("0.", "."));
+  check("V3 pooled rho Tsp_mean", rho, exp.rho_all.toFixed(2).replace("0.", "."));
   // V5 T1 flags: expect a J flag (layer 15 jump)
   const flags = await p.$$eval("#v5 text", (ts) => ts.map((t) => t.textContent).filter((s) => /^[JR]+$/.test(s)));
   check("V5 T1 has J flag", flags.includes("J") || flags.includes("JR"), true);
@@ -46,6 +46,32 @@ const out = process.argv[2] || ".";
   check("machine legend entries", await p.$$eval("#legend span", (s) => s.length), 3);
   check("V3 colour legend", (await p.$$("#v3 .legend rect")).length > 0, true);
 
+  // signal alarm mode: calibrated on other machines, persistence 1 and 30
+  await p.click('#v2-mode button[data-mode="signal"]');
+  await p.waitForTimeout(500);
+  const errStats = (o) => {
+    const e = Object.values(o).filter((v) => v.err_min !== null).map((v) => v.err_min);
+    const miss = Object.values(o).filter((v) => v.C_alarm === null).length;
+    const early = e.filter((x) => x < 0).length, late = e.length - early;
+    const mae = e.reduce((a, b) => a + Math.abs(b), 0) / e.length;
+    return `mean |error| ${mae.toFixed(1)} min · ${early} early · ${late} late · ${miss} missed`;
+  };
+  let sum = await p.textContent("#v2-summary");
+  check("V2 signal (other, persist 1)", sum.includes(errStats(exp.alarm_other_p1)), true);
+  await p.check('input[name=cal][value="own"]');
+  await p.waitForTimeout(500);
+  sum = await p.textContent("#v2-summary");
+  check("V2 signal (own, persist 1)", sum.includes(errStats(exp.alarm_own_p1)), true);
+  await p.check('input[name=cal][value="other"]');
+  await p.fill("#v2-persist", "29");
+  await p.dispatchEvent("#v2-persist", "change");
+  await p.waitForTimeout(500);
+  sum = await p.textContent("#v2-summary");
+  check("V2 signal (other, persist 29)", sum.includes(errStats(exp.alarm_other_p29)), true);
+  const e1 = await p.$$eval("#v2 svg > g > g", (gs) => gs.map((g) => [...g.querySelectorAll("text")].map((t) => t.textContent))
+    .find((t) => t[0] === "E1 M1"));
+  const a1 = exp.alarm_other_p29["1"];
+  check("V2 E1 label (other, persist 29)", e1[1], `${(-a1.err_min).toFixed(1)} min early · VB ${a1.VB_alarm}`);
   console.table(res);
   const cdp = await p.context().newCDPSession(p);
   for (const t of ["deuteranopia", "protanopia", "tritanopia"]) {

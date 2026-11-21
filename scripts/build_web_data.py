@@ -100,8 +100,8 @@ meta = dict(
     limitations=[
         "VB was measured by microscope only every 1–2 layers (~40 runs); other runs are linearly interpolated.",
         "Force (dynamometer) and control signals may be misaligned by up to ~100 ms.",
-        "M2 tools (T4–T6) come from tool batch B, all others from batch A: machine and batch effects are confounded.",
-        "Each tool ran on one machine only; 3 tools per machine.",
+        "M2 end mills (E4–E6) come from tool batch B, all others from batch A: machine and batch effects are confounded.",
+        "Each end mill ran on one machine only; 3 end mills per machine. End mills are labelled E1–E9.",
     ],
 )
 (OUT / "meta.json").write_text(json.dumps(meta, indent=1, ensure_ascii=False))

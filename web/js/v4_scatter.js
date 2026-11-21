@@ -80,7 +80,7 @@ function render() {
     const p = pts[delaunay.find(mx, my)];
     if (Math.hypot(p.px - mx, p.py - my) > 12) return ctx.tip.hide();
     const r = p.r;
-    ctx.tip.show(`<b>T${r.tool}</b> (M${r.machine}) · run ${r.run} · layer ${r.layer}<br>VB = ${r.VB_um} µm · C = ${r.C_min.toFixed(1)} min<br>`
+    ctx.tip.show(`<b>E${r.tool}</b> (M${r.machine}) · run ${r.run} · layer ${r.layer}<br>VB = ${r.VB_um} µm · C = ${r.C_min.toFixed(1)} min<br>`
       + `${info.label}: ${ctx.fmt(r[f])} ${info.unit}${state.norm !== "raw" ? ` → ${ctx.fmt(yv[r.i])}` : ""}<br><span class="muted">click to open in V5/V6</span>`, ev);
   }).on("mouseleave.tip", () => ctx.tip.hide());
   style();

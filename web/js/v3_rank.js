@@ -22,7 +22,7 @@ function compute() {
     const y = normalize(ctx.runs, f, state.norm);
     const cells = ctx.tools.map((t) => {
       const rs = sub.filter((r) => r.tool === t);
-      return { col: `T${t}`, tool: t, ...spearman(rs.map((r) => y[r.i]), rs.map((r) => r.VB_um)) };
+      return { col: `E${t}`, tool: t, ...spearman(rs.map((r) => y[r.i]), rs.map((r) => r.VB_um)) };
     });
     const pooled = spearman(sub.map((r) => y[r.i]), sub.map((r) => r.VB_um));
     cells.push({ col: "All", tool: null, ...pooled });
@@ -35,7 +35,7 @@ function render(rebuild) {
   // order: machine group first, then by pooled rho (descending) within group
   const order = d3.groups(rows, (r) => r.src).flatMap(([, v]) => v.sort((a, b) => d3.descending(a.pooled, b.pooled)));
   const W = root.node().clientWidth, iw = W - M.l - M.r;
-  const cols = [...ctx.tools.map((t) => `T${t}`), "All"];
+  const cols = [...ctx.tools.map((t) => `E${t}`), "All"];
   const xb = d3.scaleBand().domain(cols).range([0, iw]).paddingInner(0.06);
   const yPos = new Map();
   let yy = 0, lastSrc = null;
@@ -117,5 +117,5 @@ function mark() {
   g.select(".rows").selectAll("rect.selrow").data(y0 == null ? [] : [y0]).join("rect").attr("class", "selrow")
     .attr("x", -M.l + 2).attr("y", (d) => d - 1).attr("width", layout.iw + M.l - 2).attr("height", ROWH)
     .attr("fill", "none").attr("stroke", "#0b0b0b").attr("stroke-width", 1.5).attr("rx", 3).attr("pointer-events", "none");
-  g.select(".heads").selectAll("text").attr("text-decoration", (c) => (c === `T${state.tool}` ? "underline" : null));
+  g.select(".heads").selectAll("text").attr("text-decoration", (c) => (c === `E${state.tool}` ? "underline" : null));
 }

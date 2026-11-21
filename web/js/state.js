@@ -5,7 +5,7 @@ export const MACHINE_DASH = { 1: null, 2: "7 3", 3: "2 2" };
 
 export const state = {
   feature: "Tsp_mean",
-  norm: "ratio",          // raw | z | ratio
+  norm: "early",          // early (production) | vbref | z | raw
   showDyn: true,          // show dynamometer reference rows / panels
   vbThr: 140,             // µm
   jumpThr: 5,             // % layer jump flag
@@ -15,7 +15,8 @@ export const state = {
   tool: 1,                // selected tool
   runIdx: null,           // selected run (index into runs array)
   pinIdx: null,           // pinned comparison run in V6
-  fix: { mode: "fleet", fleet: null, m: { 1: null, 2: null, 3: null } }, // null = auto
+  fix: { mode: "fleet", fleet: null, m: { 1: null, 2: null, 3: null } }, // mode: fleet | machine | signal; null = auto
+  alarm: { cal: "other", level: 1.25, persist: 1 }, // signal-based rule: calibration (other | own | manual), level, persistence [runs]
 };
 
 const subs = [];

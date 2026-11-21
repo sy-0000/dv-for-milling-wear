@@ -1,6 +1,14 @@
 // Analysis components computed in the browser so users can change their parameters interactively.
 
-export const REF_BAND = [50, 60]; // µm, post break-in reference band (all tools incl. T8 have runs here)
+export const REF_BAND = [50, 60]; // µm, post break-in reference band (trial only: needs microscope VB)
+export const EARLY_BAND = [180, 360]; // s of contact time: first 3–6 min of a new tool (production-feasible)
+
+export const NORMS = {
+  early: { label: "× own first 3–6 min", prod: true },
+  vbref: { label: "× own VB 50–60 µm", prod: false },
+  z: { label: "machine z-score", prod: false },
+  raw: { label: "raw", prod: true },
+};
 
 export function median(a) {
   const v = a.filter((x) => Number.isFinite(x)).sort((p, q) => p - q);
@@ -35,7 +43,13 @@ export function spearman(x, y) {
   return { rho: sxx && syy ? sxy / Math.sqrt(sxx * syy) : NaN, n };
 }
 
-/** Normalized values of feature f for all runs. mode: raw | z (per machine) | ratio (per tool reference band). */
+/**
+ * Normalized values of feature f for all runs.
+ *  raw   : unchanged
+ *  early : ÷ median of the same tool's runs with C in 3–6 min  (available in production: no microscope, no future data)
+ *  vbref : ÷ median of the same tool's runs with VB 50–60 µm   (trial only: needs microscope)
+ *  z     : z-score within machine over all runs                (trial only: needs complete tool lives)
+ */
 export function normalize(runs, f, mode) {
   const out = new Float64Array(runs.length);
   if (mode === "raw") { runs.forEach((r, i) => (out[i] = r[f])); return out; }
@@ -44,14 +58,64 @@ export function normalize(runs, f, mode) {
     runs.forEach((r, i) => { const s = st.get(r.machine); out[i] = (r[f] - s.m) / s.s; });
     return out;
   }
-  const ref = d3.rollup(runs.filter((r) => r.VB_um >= REF_BAND[0] && r.VB_um <= REF_BAND[1]),
-    (v) => median(v.map((r) => r[f])), (r) => r.tool);
+  const inRef = mode === "early" ? (r) => r.C_s >= EARLY_BAND[0] && r.C_s <= EARLY_BAND[1]
+    : (r) => r.VB_um >= REF_BAND[0] && r.VB_um <= REF_BAND[1];
+  const ref = d3.rollup(runs.filter(inRef), (v) => median(v.map((r) => r[f])), (r) => r.tool);
   runs.forEach((r, i) => (out[i] = r[f] / ref.get(r.tool)));
   return out;
 }
 
 export function normLabel(mode, unit) {
-  return mode === "raw" ? unit : mode === "z" ? "z-score within machine" : "× tool reference (VB 50–60 µm)";
+  return mode === "raw" ? unit : mode === "z" ? "z-score within machine"
+    : mode === "early" ? "× own level in first 3–6 min" : "× own level at VB 50–60 µm";
+}
+
+/** Trailing (causal) rolling median within each tool: uses only the current and previous win-1 runs. */
+export function trailingByTool(runs, y, win = 15) {
+  const out = new Float64Array(runs.length).fill(NaN);
+  let s = 0;
+  while (s < runs.length) {
+    let e = s;
+    while (e < runs.length && runs[e].tool === runs[s].tool) e++;
+    for (let i = s; i < e; i++) {
+      const a = [];
+      for (let k = Math.max(s, i - win + 1); k <= i; k++) a.push(y[k]);
+      out[i] = median(a);
+    }
+    s = e;
+  }
+  return out;
+}
+
+/**
+ * Signal-based replacement alarm per tool.
+ * Alarm fires at the first run where the trailing median has stayed >= level for `persist` consecutive runs.
+ * Level per tool:
+ *   manual : one level for all tools
+ *   other  : median (over tools of the OTHER machines) of their trailing median at VB ≈ thr  -> out-of-machine test
+ *   own    : same, but over the tools of the SAME machine (in-sample, optimistic)
+ */
+export function signalAlarms(runs, tools, trail, thr, cal, manualLevel, persist) {
+  const atThr = new Map(tools.map((t) => [t, median(runs.filter((r) => r.tool === t && Math.abs(r.VB_um - thr) <= 3).map((r) => trail[r.i]))]));
+  const machineOf = new Map(tools.map((t) => [t, runs.find((r) => r.tool === t).machine]));
+  return tools.map((t) => {
+    const m = machineOf.get(t);
+    let level = manualLevel;
+    if (cal !== "manual") {
+      const pool = tools.filter((u) => (cal === "other" ? machineOf.get(u) !== m : machineOf.get(u) === m));
+      level = median(pool.map((u) => atThr.get(u)));
+    }
+    const rs = runs.filter((r) => r.tool === t);
+    let streak = 0, alarm = null;
+    for (const r of rs) {
+      streak = trail[r.i] >= level ? streak + 1 : 0;
+      if (streak >= persist) { alarm = r; break; }
+    }
+    const hit = rs.find((r) => r.VB_um >= thr);
+    return { tool: t, machine: m, level, alarm, reached: !!hit, Cthr: hit ? hit.C_min : null,
+             Calarm: alarm ? alarm.C_min : null, VBalarm: alarm ? alarm.VB_um : null,
+             err: alarm && hit ? alarm.C_min - hit.C_min : null, Cmax: rs[rs.length - 1].C_min };
+  });
 }
 
 /** Contact time [min] at which each tool first reaches VB >= thr. */

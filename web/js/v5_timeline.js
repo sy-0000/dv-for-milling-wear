@@ -10,13 +10,13 @@ export function init(c) {
   root = d3.select("#v5 .plot");
   const sel = d3.select("#v5-tool");
   sel.selectAll("option").data(ctx.tools).join("option").attr("value", (t) => t)
-    .text((t) => `T${t} (M${ctx.runs.find((r) => r.tool === t).machine})`);
+    .text((t) => `E${t} (M${ctx.runs.find((r) => r.tool === t).machine})`);
   sel.on("change", function () { set({ tool: +this.value, runIdx: null }); });
   render();
 }
 
 export function update(keys) {
-  if (!keys || ["tool", "feature", "norm", "jumpThr", "riseThr", "showDyn"].some((k) => keys.has(k))) return render();
+  if (!keys || ["tool", "feature", "norm", "jumpThr", "riseThr", "showDyn", "fix", "alarm", "vbThr"].some((k) => keys.has(k))) return render();
   if (keys.has("brushed") || keys.has("runIdx") || keys.has("cRange")) render();
 }
 
@@ -82,6 +82,26 @@ function render() {
     const r = ctx.runs[state.runIdx];
     g.append("line").attr("x1", x(r.run)).attr("x2", x(r.run)).attr("y1", -2).attr("y2", ih + 8 + VBH)
       .attr("stroke", "#0b0b0b").attr("stroke-width", 1.5).attr("pointer-events", "none");
+  }
+  // signal-alarm overlay: trailing median (what an online monitor sees), alarm level, alarm run
+  if (state.fix.mode === "signal") {
+    const a = ctx.alarms.find((d) => d.tool === state.tool);
+    g.append("path").datum(rs).attr("fill", "none").attr("stroke", "#0b0b0b").attr("stroke-width", 1.4)
+      .attr("d", d3.line().defined((r) => Number.isFinite(ctx.trail[r.i])).x((r) => x(r.run)).y((r) => y(ctx.trail[r.i])))
+      .attr("pointer-events", "none");
+    if (Number.isFinite(a.level) && a.level >= y.domain()[0] && a.level <= y.domain()[1]) {
+      g.append("line").attr("x1", 0).attr("x2", iw).attr("y1", y(a.level)).attr("y2", y(a.level))
+        .attr("stroke", "#0b0b0b").attr("stroke-dasharray", "6 3").attr("pointer-events", "none");
+      g.append("text").attr("class", "halo").attr("x", iw - 4).attr("y", y(a.level) - 4).attr("text-anchor", "end")
+        .text(`alarm level ${ctx.fmt(a.level)}`);
+    }
+    if (a.alarm) {
+      g.append("path").attr("d", d3.symbol(d3.symbolTriangle, 50)()).attr("transform", `translate(${x(a.alarm.run)},${y(ctx.trail[a.alarm.i]) - 10}) rotate(180)`)
+        .attr("fill", "#0b0b0b").attr("pointer-events", "none");
+      const right = x(a.alarm.run) < iw * 0.6;
+      g.append("text").attr("class", "halo").attr("x", x(a.alarm.run) + (right ? 8 : -8)).attr("y", y(ctx.trail[a.alarm.i]) + 4)
+        .attr("text-anchor", right ? "start" : "end").attr("font-weight", 600).text(`▼ alarm: run ${a.alarm.run}, VB ${a.alarm.VB_um} µm`);
+    }
   }
   if (state.pinIdx != null && ctx.runs[state.pinIdx].tool === state.tool) {
     const r = ctx.runs[state.pinIdx];

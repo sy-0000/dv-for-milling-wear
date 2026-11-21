@@ -21,10 +21,10 @@ async function render() {
   const badges = ['<span class="badge">VB interpolated unless at a measurement</span>'];
   if (r.machine === 2) badges.push('<span class="badge warn">M2: spindle/axis may be aliased</span>');
   if (ctx.meta.tool_notes[r.tool]) badges.push(`<span class="badge warn">${ctx.meta.tool_notes[r.tool]}</span>`);
-  head.html(`<b>T${r.tool} · M${r.machine} · run ${r.run}</b> — layer ${r.layer}, x = ${r.x_pass} mm, C = ${r.C_min.toFixed(1)} min, `
+  head.html(`<b>E${r.tool} · M${r.machine} · run ${r.run}</b> — layer ${r.layer}, x = ${r.x_pass} mm, C = ${r.C_min.toFixed(1)} min, `
     + `VB = ${r.VB_um} µm ${badges.join("")} `
     + `<button id="v6-pin" class="ghost small">${state.pinIdx === state.runIdx ? "unpin" : "pin as comparison"}</button>`
-    + (pin ? ` <span class="muted">gray = pinned run ${pin.run} (T${pin.tool}, VB ${pin.VB_um} µm)</span>` : ""));
+    + (pin ? ` <span class="muted">gray = pinned run ${pin.run} (E${pin.tool}, VB ${pin.VB_um} µm)</span>` : ""));
   d3.select("#v6-pin").on("click", () => set({ pinIdx: state.pinIdx === state.runIdx ? null : state.runIdx }));
 
   const panels = [

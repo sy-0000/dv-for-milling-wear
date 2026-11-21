@@ -60,7 +60,7 @@ p2 = errs.max() < 1e-3
 print("RESULT:", "PASS" if p2 else "FAIL")
 ok &= bool(p2)
 
-print("\n== 3. reference values for the app (VB threshold 140 µm, feature Tsp_mean, × tool reference)")
+print("\n== 3. reference values for the app (VB threshold 140 µm, feature Tsp_mean, × own first 3–6 min)")
 web["C_min"] = web.C_s / 60
 life = {}
 for t, g in web.groupby("tool"):
@@ -68,12 +68,42 @@ for t, g in web.groupby("tool"):
     life[t] = round(float(hit.C_min.iloc[0]), 1) if len(hit) else None
 fix = min(v for v in life.values() if v is not None)
 unused = {t: (round((c - fix) / c * 100) if c and c - fix > 0.05 else 0) for t, c in life.items()}
-ref = web[web.VB_um.between(50, 60)].groupby("tool").Tsp_mean.median()
-web["Tsp_ratio"] = web.Tsp_mean / web.tool.map(ref)
-band = [float(web[(web.tool == t) & ((web.VB_um - 140).abs() <= 3)].Tsp_ratio.median()) for t in range(1, 10)]
-rho_all = spearmanr(web.Tsp_ratio, web.VB_um)[0]
+ref = web[web.C_s.between(180, 360)].groupby("tool").Tsp_mean.median()
+web["y"] = web.Tsp_mean / web.tool.map(ref)
+band = [float(web[(web.tool == t) & ((web.VB_um - 140).abs() <= 3)].y.median()) for t in range(1, 10)]
+rho_all = spearmanr(web.y, web.VB_um)[0]
+# trailing (causal) median of 15 runs within tool, then signal alarm (same algorithm as web/js/analysis.js)
+web["trail"] = web.groupby("tool").y.transform(lambda s: s.rolling(15, min_periods=1).median())
+mach = web.groupby("tool").machine.first().to_dict()
+at = {t: float(web[(web.tool == t) & ((web.VB_um - 140).abs() <= 3)].trail.median()) for t in range(1, 10)}
+
+
+def alarms(cal, persist):
+    out = {}
+    for t in range(1, 10):
+        pool = [u for u in range(1, 10) if (mach[u] != mach[t] if cal == "other" else mach[u] == mach[t])]
+        level = float(np.median([at[u] for u in pool]))
+        g = web[web.tool == t]
+        streak, a = 0, None
+        for _, r in g.iterrows():
+            streak = streak + 1 if r.trail >= level else 0
+            if streak >= persist:
+                a = r
+                break
+        cthr = g[g.VB_um >= 140].C_min.iloc[0]
+        out[int(t)] = dict(level=round(level, 3), C_alarm=None if a is None else round(float(a.C_min), 1),
+                      VB_alarm=None if a is None else int(a.VB_um), err_min=None if a is None else round(float(a.C_min - cthr), 1))
+    return out
+
+
 exp = dict(life_at_140=life, fleet_fix=round(fix, 1), unused_pct=unused,
-           band_lo=round(min(band), 3), band_hi=round(max(band), 3), rho_all_Tsp_ratio=round(float(rho_all), 2))
-print(json.dumps(exp, indent=1))
+           band_lo=round(min(band), 3), band_hi=round(max(band), 3), rho_all=round(float(rho_all), 2),
+           alarm_other_p1=alarms("other", 1), alarm_other_p29=alarms("other", 29), alarm_own_p1=alarms("own", 1))
+for k in ["alarm_other_p1", "alarm_other_p29", "alarm_own_p1"]:
+    e = [v["err_min"] for v in exp[k].values() if v["err_min"] is not None]
+    miss = sum(v["C_alarm"] is None for v in exp[k].values())
+    print(f"{k}: errors {e} | missed {miss} | mean|err| {np.mean(np.abs(e)):.1f} min")
+    print("   E1:", exp[k][1], "| E7:", exp[k][7])
+print({k: exp[k] for k in ["fleet_fix", "unused_pct", "band_lo", "band_hi", "rho_all"]})
 (ROOT / "data" / "verify_expected.json").write_text(json.dumps(exp, indent=1))
 print("\nOVERALL:", "PASS" if ok else "FAIL")

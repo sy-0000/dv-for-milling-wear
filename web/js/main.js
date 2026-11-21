@@ -1,5 +1,5 @@
 import { state, set, on, MACHINE_COLOR } from "./state.js";
-import { normalize, rollingByTool, layerDiagnostics } from "./analysis.js";
+import { normalize, rollingByTool, trailingByTool, layerDiagnostics, signalAlarms } from "./analysis.js";
 import * as V1 from "./v1_wear.js";
 import * as V2 from "./v2_life.js";
 import * as V3 from "./v3_rank.js";
@@ -54,13 +54,18 @@ const ctx = {
   envelopes, envelope,
   inRange: (r) => !state.cRange || (r.C_min >= state.cRange[0] && r.C_min <= state.cRange[1]),
   fmt: d3.format(".3~g"),
-  y: null, roll: null, layers: null,
+  y: null, roll: null, trail: null, layers: null, alarms: null,
 };
 
 function derive(keys) {
   if (!keys || keys.has("feature") || keys.has("norm")) {
     ctx.y = normalize(runs, state.feature, state.norm);
     ctx.roll = rollingByTool(runs, ctx.y, 15);
+    ctx.trail = trailingByTool(runs, ctx.y, 15);
+  }
+  if (!keys || ["feature", "norm", "vbThr", "alarm"].some((k) => keys.has(k))) {
+    const a = state.alarm;
+    ctx.alarms = signalAlarms(runs, ctx.tools, ctx.trail, state.vbThr, a.cal, a.level, a.persist);
   }
   if (!keys || keys.has("feature")) ctx.layers = layerDiagnostics(runs, state.feature);
 }
@@ -102,7 +107,7 @@ document.getElementById("ctl-reset").onclick = () =>
   set({ cRange: null, brushed: null, runIdx: null, pinIdx: null, fix: { mode: state.fix.mode, fleet: null, m: { 1: null, 2: null, 3: null } } });
 
 d3.select("#legend").selectAll("span").data(Object.entries(meta.machines)).join("span")
-  .html(([m, d]) => `<i style="background:${MACHINE_COLOR[m]}"></i>M${m} ${d.name.replace("DMG Mori ", "")} (T${d.tools[0]}–T${d.tools[2]})`)
+  .html(([m, d]) => `<i style="background:${MACHINE_COLOR[m]}"></i>M${m} ${d.name.replace("DMG Mori ", "")} (E${d.tools[0]}–E${d.tools[2]})`)
   .attr("title", ([, d]) => `${d.name}, ${d.control}, ${d.drive}, tool batch ${d.batch}${d.note ? " — " + d.note : ""}`);
 document.getElementById("limitations").innerHTML = "<b>Data limitations:</b> " + meta.limitations.join(" · ");
 
@@ -119,19 +124,21 @@ function syncControls() {
 
 // ---------- guided steps (apply settings + point at the relevant views) ----------
 const GUIDE = {
-  1: { patch: { feature: "Tsp_mean", norm: "ratio", vbThr: 140, cRange: null, brushed: null, tool: 4,
+  1: { patch: { feature: "Tsp_mean", norm: "early", vbThr: 140, cRange: null, brushed: null, tool: 4,
                 fix: { mode: "fleet", fleet: null, m: { 1: null, 2: null, 3: null } } },
        views: ["v1", "v2"],
-       note: "① Compare the wear curves (V1) and the tool life at the threshold (V2). Where do the machines differ? "
-           + "How much life would a single fixed replacement time leave unused? Try the per-machine option." },
-  2: { patch: { norm: "ratio", cRange: null, brushed: null, showDyn: true },
-       views: ["v3", "v4"],
-       note: "② Which production signal (top rows of V3) follows wear in every tool? Click a row and check in V4 "
-           + "whether the three machines collapse onto one curve, and what level the band shows at the threshold." },
-  3: { patch: { feature: "Tsp_mean", norm: "ratio", tool: 1, runIdx: null, brushed: null, showDyn: true },
-       views: ["v5", "v6"],
-       note: "③ Look for flagged layers in V5 (J = jump, R = rise). Open runs before and inside a flagged layer in V6 "
-           + "and compare machine signals with the dynamometer reference. Is it wear, or something else?" },
+       note: "① Compare the wear curves (V1) and the replacement rules (V2). How much life does one fixed time for all machines "
+           + "leave unused, and how does that change with one time per machine? Remember: machine and tool batch are confounded." },
+  2: { patch: { norm: "early", cRange: null, brushed: null, showDyn: true },
+       views: ["v3", "v4", "v2"],
+       note: "② Which production signal (top rows of V3) follows wear in every end mill with a production-feasible normalization? "
+           + "Check in V4 whether the machines share one curve, then switch V2 to 'signal alarm' calibrated on the other machines: "
+           + "does one alarm level transfer to a new machine?" },
+  3: { patch: { feature: "Tsp_mean", norm: "early", tool: 1, runIdx: null, brushed: null, showDyn: true,
+                fix: { mode: "signal", fleet: null, m: { 1: null, 2: null, 3: null } }, alarm: { cal: "other", level: 1.25, persist: 1 } },
+       views: ["v5", "v6", "v2"],
+       note: "③ In V5, compare flagged layers (J = jump, R = rise) with the alarm line. Open runs before and inside a flagged layer in V6. "
+           + "Is it wear? Then try a longer persistence in V2 and see what it does to false and late alarms." },
 };
 document.querySelectorAll(".guide button").forEach((b) => (b.onclick = () => {
   const g = GUIDE[b.dataset.step];
