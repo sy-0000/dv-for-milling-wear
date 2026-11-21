@@ -1,5 +1,5 @@
 // V4 · Feature (normalized) vs VB, all runs. 2-D brush selects runs; band = feature level at the VB threshold.
-import { state, set } from "./state.js";
+import { state, set, MACHINE_DASH } from "./state.js";
 import { normLabel, median } from "./analysis.js";
 
 let ctx, root, x, y, g, dots, delaunay, pts;
@@ -57,6 +57,7 @@ function render() {
     const line = d3.line().defined((r) => Number.isFinite(ctx.roll[r.i])).x((r) => x(r.VB_um)).y((r) => y(ctx.roll[r.i]));
     g.append("g").selectAll("path").data(d3.groups(ctx.runs, (r) => r.tool)).join("path")
       .attr("fill", "none").attr("stroke", ([t, rs]) => ctx.color(rs[0].machine)).attr("stroke-width", 1.6)
+      .attr("stroke-dasharray", ([, rs]) => MACHINE_DASH[rs[0].machine])
       .attr("d", ([, rs]) => line(rs));
   }
   g.append("g").attr("class", "selmark");

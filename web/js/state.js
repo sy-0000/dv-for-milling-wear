@@ -1,5 +1,7 @@
 // Global UI state with a tiny publish/subscribe mechanism.
 export const MACHINE_COLOR = { 1: "#2a78d6", 2: "#eb6834", 3: "#1baf7a" };
+// secondary encoding (colour-vision deficiency): line style per machine
+export const MACHINE_DASH = { 1: null, 2: "7 3", 3: "2 2" };
 
 export const state = {
   feature: "Tsp_mean",
