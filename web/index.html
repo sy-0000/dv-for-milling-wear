@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WearLens</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="lib/d3.v7.9.0.min.js"></script>
+</head>
+<body>
+<header class="top">
+  <div class="title">
+    <h1>WearLens <span class="subtitle">Visual analytics of end-mill wear across three machine tools</span></h1>
+    <p class="muted small">Target user: process engineer introducing tool-condition monitoring on a machine fleet. In production only
+      <b>machine-control signals</b> are available; the dynamometer is shown as a <i>reference</i> from the trial.</p>
+  </div>
+  <nav class="guide" aria-label="Guided scenarios">
+    <span class="muted small">Guided steps:</span>
+    <button data-step="1">① Replacement strategy</button>
+    <button data-step="2">② Choose an indicator</button>
+    <button data-step="3">③ Check suspicious changes</button>
+  </nav>
+</header>
+<p id="guide-note" class="guide-note" hidden></p>
+
+<section id="controls" class="controls" aria-label="Global controls">
+  <label>Feature <select id="ctl-feature"></select></label>
+  <fieldset class="seg" id="ctl-norm">
+    <legend>Normalization</legend>
+    <label title="Divide by the same end mill's median in its first 3–6 min of contact time. Available in production."><input type="radio" name="norm" value="early" checked> × own first 3–6 min <span class="badge">production</span></label>
+    <label title="Divide by the same end mill's median at VB 50–60 µm. Needs microscope measurements: trial only."><input type="radio" name="norm" value="vbref"> × own VB 50–60 µm <span class="badge warn">trial only</span></label>
+    <label title="z-score over all runs of the machine. Needs complete tool lives: trial only."><input type="radio" name="norm" value="z"> machine z-score <span class="badge warn">trial only</span></label>
+    <label><input type="radio" name="norm" value="raw"> raw</label>
+  </fieldset>
+  <label class="chk"><input type="checkbox" id="ctl-dyn" checked> Dynamometer reference</label>
+  <label>VB threshold <input type="range" id="ctl-thr" min="60" max="150" step="5" value="140"> <output id="out-thr">140 µm</output></label>
+  <label>Layer jump ≥ <input type="range" id="ctl-jump" min="2" max="30" step="1" value="5"> <output id="out-jump">5 %</output></label>
+  <label>In-layer rise ≥ <input type="range" id="ctl-rise" min="5" max="60" step="1" value="20"> <output id="out-rise">20 %</output></label>
+  <div class="legend" id="legend" aria-label="Machine color legend"></div>
+  <button id="ctl-reset" class="ghost">Reset selections</button>
+</section>
+
+<main class="grid">
+  <section class="view" id="v1"><h2>V1 · Wear curves per tool</h2>
+    <p class="hint">VB vs cumulated contact time. Drag horizontally to filter a time range · click a panel to select the tool.</p>
+    <div class="plot"></div></section>
+  <section class="view" id="v2"><h2>V2 · Replacement rules vs the VB threshold <span class="tag">analysis</span></h2>
+    <p class="hint">Rule: <span id="v2-mode" class="seg-inline"><button data-mode="fleet" class="on">fixed time · all machines</button><button data-mode="machine">fixed time · per machine</button><button data-mode="signal">signal alarm</button></span></p>
+    <p class="hint" id="v2-fixed-hint">Drag the dashed line = fixed replacement time.</p>
+    <div class="hint" id="v2-signal-ctl" hidden>Alarm when the trailing median (15 runs) of the <b>selected feature</b> stays ≥ level for
+      <input type="number" id="v2-persist" min="1" max="120" step="1" value="1" style="width:4em"> runs. Level:
+      <label><input type="radio" name="cal" value="other" checked> calibrated on the other machines</label>
+      <label><input type="radio" name="cal" value="own"> calibrated on own machine <i>(in-sample)</i></label>
+      <label><input type="radio" name="cal" value="manual"> manual <input type="number" id="v2-level" step="0.01" value="1.25" style="width:5em"></label></div>
+    <div class="plot"></div><p class="summary" id="v2-summary"></p></section>
+  <section class="view" id="v3"><h2>V3 · Which signal follows wear? <span class="tag">analysis</span></h2>
+    <p class="hint">Spearman ρ(feature, VB) per tool and for all tools pooled (current normalization &amp; time filter). Click a row to select the feature.</p>
+    <div class="plot"></div></section>
+  <section class="view" id="v4"><h2>V4 · Feature vs wear</h2>
+    <p class="hint">Each dot = one run. Lines = per-tool rolling median. Drag a box to brush runs. Band = feature level when tools reach the threshold.
+      <label class="chk small"><input type="checkbox" id="v4-lines" checked> trend lines</label> <span class="small">(M1 solid · M2 dashed · M3 dotted)</span></p>
+    <div class="plot"></div></section>
+  <section class="view" id="v5"><h2>V5 · Run timeline of <select id="v5-tool"></select> <span class="tag">analysis</span></h2>
+    <p class="hint">Shaded bands = layers (29 runs each). Flags: <b>J</b> = jump vs neighbouring layers, <b>R</b> = rise within the layer. In signal-alarm mode: black line = trailing median (15 runs), dashed = alarm level. Click a run for details.</p>
+    <div class="plot"></div></section>
+  <section class="view" id="v6"><h2>V6 · Run details</h2>
+    <p class="hint" id="v6-head">Click a run in V4 or V5.</p>
+    <div class="plot"></div></section>
+</main>
+
+<footer class="foot small muted">
+  <p id="limitations"></p>
+  <p>Data: Denkena, Klemme &amp; Stiehl (2023), <i>Data in Brief</i> 50:109574 · Mendeley Data doi:10.17632/zpxs87bjt8 (CC BY 4.0). Built with D3.js v7.9.0.</p>
+</footer>
+<div id="tooltip" role="tooltip" hidden></div>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
