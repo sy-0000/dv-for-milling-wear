@@ -92,8 +92,9 @@ export function trailingByTool(runs, y, win = 15) {
  * Alarm fires at the first run where the trailing median has stayed >= level for `persist` consecutive runs.
  * Level per tool:
  *   manual : one level for all tools
- *   other  : median (over tools of the OTHER machines) of their trailing median at VB ≈ thr  -> out-of-machine test
- *   own    : same, but over the tools of the SAME machine (in-sample, optimistic)
+ *   other    : median (over tools of the OTHER machines) of their trailing median at VB ≈ thr  -> out-of-machine test
+ *   loo      : same, over the OTHER tools of the SAME machine (leave-one-end-mill-out test)
+ *   insample : same, over all tools of the same machine INCLUDING the tested one (in-sample, optimistic)
  */
 export function signalAlarms(runs, tools, trail, thr, cal, manualLevel, persist) {
   const atThr = new Map(tools.map((t) => [t, median(runs.filter((r) => r.tool === t && Math.abs(r.VB_um - thr) <= 3).map((r) => trail[r.i]))]));
@@ -102,7 +103,8 @@ export function signalAlarms(runs, tools, trail, thr, cal, manualLevel, persist)
     const m = machineOf.get(t);
     let level = manualLevel;
     if (cal !== "manual") {
-      const pool = tools.filter((u) => (cal === "other" ? machineOf.get(u) !== m : machineOf.get(u) === m));
+      const pool = tools.filter((u) => (cal === "other" ? machineOf.get(u) !== m
+        : cal === "loo" ? machineOf.get(u) === m && u !== t : machineOf.get(u) === m));
       level = median(pool.map((u) => atThr.get(u)));
     }
     const rs = runs.filter((r) => r.tool === t);

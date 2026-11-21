@@ -25,6 +25,11 @@ export function update(keys) {
 
 function fixTimes(life) {
   const auto = (list) => d3.min(list.filter((d) => d.reached), (d) => d.C) ?? d3.min(list, (d) => d.C);
+  if (state.fix.mode === "machineLoo") { // per end mill: earliest life among the OTHER end mills of the machine
+    const o = {};
+    life.forEach((d) => (o["t" + d.tool] = auto(life.filter((e) => e.machine === d.machine && e.tool !== d.tool))));
+    return o;
+  }
   if (state.fix.mode === "fleet") {
     const t = state.fix.fleet ?? auto(life);
     return { 1: t, 2: t, 3: t };
@@ -76,8 +81,10 @@ function render() {
   const fx = fixTimes(life);
   const { g, x, rowY, ih } = frame();
   let unusedSum = 0, unusedN = 0, overrun = 0;
+  const errsF = [];
   life.forEach((d, k) => {
-    const h = ROW - 4, c = ctx.color(d.machine), tf = fx[d.machine];
+    const h = ROW - 4, c = ctx.color(d.machine), tf = fx["t" + d.tool] ?? fx[d.machine];
+    if (d.reached) errsF.push(tf - d.C);
     const row = rowFrame(g, k, rowY, d);
     row.append("rect").attr("width", x(d.C)).attr("height", h).attr("rx", 2).attr("fill", c).attr("opacity", 0.28);
     row.append("rect").attr("width", x(Math.min(tf, d.C))).attr("height", h).attr("rx", 2).attr("fill", c);
@@ -94,14 +101,18 @@ function render() {
     } else {
       row.append("rect").attr("x", x(d.C)).attr("width", x(tf) - x(d.C)).attr("height", h).attr("fill", "url(#hatch)");
       overrun++; unusedN++;
-      label = `⚠ ${(tf - d.C).toFixed(1)} min past threshold`;
+      label = `⚠ ${(tf - d.C).toFixed(1)} min overrun`;
     }
     row.append("text").attr("x", x(Math.max(d.C, tf)) + 4).attr("y", h / 2 + 4).attr("class", "lbl-2").text(label);
     row.on("mousemove", (ev) => ctx.tip.show(`<b>E${d.tool}</b> (M${d.machine}, tool batch ${ctx.meta.machines[d.machine].batch})<br>`
       + (d.reached ? `reaches VB ${state.vbThr} µm at C = ${d.C.toFixed(1)} min` : `never reaches ${state.vbThr} µm (max ${d.VBmax} µm)`)
       + `<br>replacement at ${tf.toFixed(1)} min → ${label}`, ev)).on("mouseleave", () => ctx.tip.hide());
   });
-  const groups = state.fix.mode === "fleet" ? [{ key: "fleet", y0: -6, y1: ih, t: fx[1] }]
+  if (state.fix.mode === "machineLoo") { // one tick per end mill, not draggable
+    life.forEach((d, k) => g.append("line").attr("x1", x(fx["t" + d.tool])).attr("x2", x(fx["t" + d.tool]))
+      .attr("y1", rowY(k) - 3).attr("y2", rowY(k) + ROW - 1).attr("stroke", "#0b0b0b").attr("stroke-width", 2).attr("stroke-dasharray", "3 2"));
+  }
+  const groups = state.fix.mode === "machineLoo" ? [] : state.fix.mode === "fleet" ? [{ key: "fleet", y0: -6, y1: ih, t: fx[1] }]
     : [1, 2, 3].map((m) => ({ key: m, y0: rowY((m - 1) * 3) - 8, y1: rowY((m - 1) * 3 + 2) + ROW, t: fx[m] }));
   const drag = d3.drag().on("drag", (ev, d) => {
     const t = Math.max(1, Math.min(90, x.invert(ev.x)));
@@ -116,9 +127,12 @@ function render() {
     .attr("fill", "transparent");
   lines.append("text").attr("class", "halo").attr("x", (d) => x(d.t) + 4).attr("y", (d) => d.y0 - 4).attr("font-weight", 600)
     .text((d) => `${d.t.toFixed(1)} min`);
-  const mode = state.fix.mode === "fleet" ? "Fixed time for all machines" : "Fixed time per machine";
-  d3.select("#v2-summary").html(`<b>${mode}:</b> mean unused life ${unusedN ? (unusedSum / unusedN).toFixed(1) : "–"} % `
-    + `(end mills that reach the threshold)` + (overrun ? ` · <b>⚠ ${overrun} run past the threshold</b>` : "")
+  const mode = state.fix.mode === "fleet" ? "Fixed time for all machines" : state.fix.mode === "machine"
+    ? "Fixed time per machine (in-sample)" : "Fixed time per machine, leave-one-out";
+  const maeF = errsF.length ? d3.mean(errsF, Math.abs) : NaN;
+  d3.select("#v2-summary").html(`<b>${mode}:</b> mean |error| ${Number.isFinite(maeF) ? maeF.toFixed(1) : "–"} min · `
+    + `mean unused life ${unusedN ? (unusedSum / unusedN).toFixed(1) : "–"} % · ${overrun} overrun(s), 0 missed`
+    + ` <span class="muted">(end mills that reach the threshold; error = replacement time − time VB reaches ${state.vbThr} µm)</span>`
     + ` <span class="muted">M2 end mills = tool batch B: machine and batch effects are confounded.</span>`);
 }
 
@@ -148,15 +162,18 @@ function renderSignal() {
     } else if (d.reached) { miss++; label = "⚠ no alarm"; }
     row.append("text").attr("x", x(Math.max(end, d.Calarm ?? 0)) + 4).attr("y", h / 2 + 4).attr("class", "lbl-2").text(label);
     row.on("mousemove", (ev) => ctx.tip.show(`<b>E${d.tool}</b> (M${d.machine})<br>alarm level ${ctx.fmt(d.level)} `
-      + `(${state.alarm.cal === "other" ? "calibrated on the other machines" : state.alarm.cal === "own" ? "calibrated on own machine — in-sample" : "manual"})<br>`
+      + `(${{ other: "other machines", loo: "same machine, other end mills", insample: "same machine, in-sample", manual: "manual" }[state.alarm.cal]})<br>`
       + (d.alarm ? `alarm at C = ${d.Calarm.toFixed(1)} min, VB = ${d.VBalarm} µm` : "no alarm")
       + (d.reached ? `<br>VB ≥ ${state.vbThr} µm at C = ${d.Cthr.toFixed(1)} min` : ""), ev)).on("mouseleave", () => ctx.tip.hide());
   });
   const mae = errs.length ? d3.mean(errs, Math.abs) : NaN;
   const cal = state.alarm.cal === "other" ? "level calibrated on the other two machines (out-of-machine test)"
-    : state.alarm.cal === "own" ? "level calibrated on the same machine (in-sample, optimistic)" : `manual level ${state.alarm.level}`;
+    : state.alarm.cal === "loo" ? "level calibrated on the other end mills of the same machine (leave-one-out)"
+    : state.alarm.cal === "insample" ? "level calibrated on the same machine incl. the tested end mill (in-sample, optimistic)"
+    : `manual level ${state.alarm.level}`;
   d3.select("#v2-summary").html(`<b>Signal alarm</b> on ${info.label} [${state.norm}], ${cal}, persistence ${state.alarm.persist} run(s): `
     + `mean |error| ${Number.isFinite(mae) ? mae.toFixed(1) : "–"} min · ${early} early · ${late} late · <b>${miss} missed</b>. `
-    + `<span class="muted">▼ = alarm. Error = alarm time − time VB reaches ${state.vbThr} µm.</span>`
+    + `<span class="muted">▼ = alarm. Error = alarm time − time VB reaches ${state.vbThr} µm (early < 0 ≤ late); `
+    + `mean |error| over the end mills that alarm, missed alarms counted separately. Light bar = life until the threshold.</span>`
     + (ctx.meta.features[state.feature].source === "dynamometer" ? " <b>Dynamometer features are not available in production.</b>" : ""));
 }

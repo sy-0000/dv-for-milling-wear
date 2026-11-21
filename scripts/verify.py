@@ -81,7 +81,8 @@ at = {t: float(web[(web.tool == t) & ((web.VB_um - 140).abs() <= 3)].trail.media
 def alarms(cal, persist):
     out = {}
     for t in range(1, 10):
-        pool = [u for u in range(1, 10) if (mach[u] != mach[t] if cal == "other" else mach[u] == mach[t])]
+        pool = [u for u in range(1, 10) if (mach[u] != mach[t] if cal == "other"
+                                            else (mach[u] == mach[t] and u != t) if cal == "loo" else mach[u] == mach[t])]
         level = float(np.median([at[u] for u in pool]))
         g = web[web.tool == t]
         streak, a = 0, None
@@ -96,11 +97,13 @@ def alarms(cal, persist):
     return out
 
 
-exp = dict(life_at_140=life, fleet_fix=round(fix, 1), unused_pct=unused,
+fixed_loo = {t: round(min(life[u] for u in life if mach[u] == mach[t] and u != t) - life[t], 1) for t in life}
+print("fixed per machine, leave-one-out errors:", fixed_loo, "| mean|err| %.1f" % np.mean(np.abs(list(fixed_loo.values()))))
+exp = dict(fixed_loo=fixed_loo, life_at_140=life, fleet_fix=round(fix, 1), unused_pct=unused,
            band_lo=round(min(band), 3), band_hi=round(max(band), 3), rho_all=round(float(rho_all), 2),
-           alarm_other_p1=alarms("other", 1), alarm_other_p29=alarms("other", 29), alarm_own_p1=alarms("own", 1),
-           alarm_other_p30=alarms("other", 30), alarm_own_p30=alarms("own", 30))
-for k in ["alarm_other_p1", "alarm_other_p29", "alarm_own_p1", "alarm_other_p30", "alarm_own_p30"]:
+           alarm_other_p1=alarms("other", 1), alarm_other_p29=alarms("other", 29), alarm_insample_p1=alarms("insample", 1),
+           alarm_other_p30=alarms("other", 30), alarm_loo_p1=alarms("loo", 1), alarm_insample_p30=alarms("insample", 30))
+for k in ["alarm_other_p1", "alarm_other_p29", "alarm_insample_p1", "alarm_other_p30", "alarm_insample_p30", "alarm_loo_p1"]:
     e = [v["err_min"] for v in exp[k].values() if v["err_min"] is not None]
     miss = sum(v["C_alarm"] is None for v in exp[k].values())
     print(f"{k}: errors {e} | missed {miss} | mean|err| {np.mean(np.abs(e)):.1f} min")

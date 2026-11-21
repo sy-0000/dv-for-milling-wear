@@ -33,6 +33,9 @@ function render() {
     .attr("aria-label", `Run timeline of tool ${state.tool}`);
   const g = svg.append("g").attr("transform", `translate(${M.l},${M.t})`);
   const layers = ctx.layers.filter((l) => l.tool === state.tool);
+  const isFlag = (l) => (l.jumpPeak && Math.abs(l.jump) >= state.jumpThr) || Math.abs(l.rise) >= state.riseThr;
+  d3.select("#v5-count").text(`Flagged layers at these thresholds: ${ctx.layers.filter(isFlag).length} of ${ctx.layers.length} (all end mills), `
+    + `${layers.filter(isFlag).length} in E${state.tool}.`);
   const runOf = (i) => ctx.runs[i].run;
 
   // layer bands + flags

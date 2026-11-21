@@ -55,7 +55,7 @@ Run & ordinal & pass counter per end mill (removed runs not counted) \\
 Contact time $C$ & quant.\ [s] & cumulated cutting time before the run \\
 Flank wear VB & quant.\ [$\mu$m] & microscope measurement, see limitations \\
 Layer, pass position & ordinal, quant.\ [mm] & derived from the tool position \\
-Machine signals & time series, 500\,Hz & spindle torque; feed-drive torque (M1, ball screw) or force (M2/M3, linear motor); position control deviation (commanded minus actual position) \\
+Machine signals & time series, 500\,Hz & spindle torque; feed-drive \emph{effort}, i.e.\ torque (M1, ball screw) or force (M2/M3, linear motor); position control deviation (commanded minus actual position) \\
 Dynamometer forces & time series, 25\,kHz & $F_x, F_y, F_z$; reference only (Section~\ref{sec:users}) \\
 \bottomrule
 \end{tabular}
@@ -97,9 +97,12 @@ because it needs neither the microscope nor future data), dividing by its median
 and a z-score within each machine (both only possible in a trial). A \emph{signal alarm} fires when the
 trailing median of the last 15 runs (about half a layer, computable online) stays above an \emph{alarm level}
 for a given number of consecutive runs, the \emph{persistence}. To \emph{calibrate} the level, WearLens takes
-the median, over the end mills of the calibration machines, of their smoothed signal when they reach the
-VB limit. The \emph{alarm error} is the alarm time minus the time at which VB reaches the limit; an alarm that
-comes too late is an \emph{overrun}. The \emph{wear phases} are the fast initial wear, the slow
+the median, over a set of calibration end mills, of their smoothed signal when they reach the VB limit; the set
+is either the other two machines, the other end mills of the same machine (leave-one-out), or all end mills of
+the machine (in-sample). The \emph{error} of a rule is its replacement or alarm time minus the time at which VB
+reaches the limit: negative is \emph{early}, non-negative is \emph{late}; a late replacement is an \emph{overrun},
+and an end mill that reaches the limit without an alarm is \emph{missed}. The mean absolute error (MAE) is taken
+over the end mills that alarm; missed end mills are always reported separately. The \emph{wear phases} are the fast initial wear, the slow
 middle phase and the accelerated final phase visible in Fig.~\ref{fig:motivation}a.
 \emph{Spearman's rank correlation} $\rho$ measures how monotonically a feature increases with VB.
 
@@ -146,11 +149,12 @@ machine are not distinguished here.}
 \paragraph{Why visual analytics?}
 A single static chart cannot answer these questions: the outcome of a rule depends on the feature,
 normalization, calibration, alarm level, persistence and wear limit together. One could search this space
-automatically and plot the trade-off between early and missed alarms. With three end mills per machine,
-however, a single event such as the E1 jump decides whether a setting looks good or bad, and an automatic
-search reports it only as an error in minutes. The engineer has to see which end mill and which layer
-caused an error, check the signals there, and decide whether the rule should be changed for it. Choosing
-between early and missed alarms is, in the end, a decision about cost and quality risk. WearLens therefore
+automatically and even mark errors that fall into flagged layers. With three end mills per machine,
+however, a single event such as the E1 jump decides whether a setting looks good or bad. Whether that event
+should change the rule depends on what it is: a sensor fault, a change in the process, or real wear. Telling
+these apart requires comparing the spindle torque, the feed-drive effort and the dynamometer reference
+around the event, which is a judgement based on domain knowledge rather than an optimization target.
+Choosing between early and missed alarms is, in the end, a decision about cost and quality risk. WearLens therefore
 combines the derived measures with the underlying signals so that the engineer can check the measures
 before acting on them.
 
