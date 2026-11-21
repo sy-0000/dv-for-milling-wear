@@ -1,0 +1,175 @@
+% ============================================================
+% WearLens report -- Sections 2-5 (Overview, Data, Users & Challenges, Tasks)
+% Paste into the course LaTeX template. Requires \usepackage{booktabs} (and {tabularx} for Table 3).
+% All numbers are traceable to the repository: data/eda_tool_life.csv, data/eda_spearman.csv,
+% data/features_enriched.csv, docs/07_verification.md.
+% Lines marked TODO need a team decision or a citation you have checked yourselves.
+% ============================================================
+
+\section{Overview}
+End mills wear gradually, and a worn tool degrades surface quality and process stability.
+Shops therefore usually replace tools after a fixed period, which wastes much of the remaining life
+of most tools~\cite{denkena2023}. Measuring wear directly requires stopping the machine and inspecting
+the tool under a microscope, so engineers would like to monitor wear through signals the machine already
+records. This is difficult on a \emph{fleet} of machines: the same tool model lasts noticeably longer on one
+machine than on another, the same signal behaves differently across machines, and many signal changes are
+not caused by wear at all.
+\textbf{WearLens} is a visual analytics system for process engineers who introduce tool-condition
+monitoring on several machine tools. It helps them
+(i) choose replacement times that do not waste tool life,
+(ii) find a machine-control signal that tracks wear consistently across machines, and
+(iii) tell real wear from signal changes with other causes.
+
+\section{Data and Data Processing}
+\paragraph{Source.}
+We use the open dataset of Denkena \etal~\cite{denkena2023}
+(Mendeley Data, \url{https://doi.org/10.17632/zpxs87bjt8}, CC~BY~4.0).
+Nine solid-carbide end mills of the same model (D\,8\,mm, 4 edges) were each worn from new to
+the end of life ($\mathrm{VB}\approx150\,\mu$m) by shoulder milling cast iron on three 5-axis machines
+(M1: T1--T3, M2: T4--T6, M3: T7--T9), using identical NC code and process parameters.
+Each \emph{run} is one straight milling pass of about 4\,s cutting, stored as one HDF5 file;
+44 runs form one 2\,mm layer. The dataset holds \textbf{6,418 runs} (10.6\,GB).
+
+\paragraph{Attributes.}
+Table~\ref{tab:data} lists the attributes we use. Each run contains multivariate time series from two
+independent measurement chains: the machine control (500\,Hz) and a Kistler dynamometer below the
+workpiece (25\,kHz). In our scenario, only the machine-control signals are available in production;
+the dynamometer serves as a reference from the trial (Section~\ref{sec:users}).
+
+\begin{table}[t]
+\centering\small
+\caption{Attributes used by WearLens (per run unless noted).}
+\label{tab:data}
+\begin{tabular}{@{}lll@{}}
+\toprule
+Attribute & Type & Description \\
+\midrule
+Machine M, tool T & categorical & 3 machines, 9 tools (3 per machine) \\
+Run R & ordinal & pass counter per tool (removed runs not counted) \\
+Contact time C & quantitative [s] & cumulated cutting time before the run \\
+Flank wear VB & quantitative [$\mu$m] & mean of 4 edges, microscope \\
+Layer, pass position $x$ & ordinal / quant.\ [mm] & derived from \texttt{tool\_position\_x} \\
+Machine signals & time series, 500\,Hz & spindle torque, feed-axis torque (M1) or force (M2/M3), \\
+ & & position control deviation, tool position \\
+Dynamometer forces & time series, 25\,kHz & $F_x, F_y, F_z$ (reference only) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Preprocessing (Python, offline).}
+We verified every file against its SHA-256 checksum and checked that the labels inside each file
+match \texttt{filelist.csv} (6,418/6,418).
+For each run we
+(1) detect the cutting window from the dynamometer's $xy$ resultant force
+(50\,ms moving RMS above 30\,\% of its 95th percentile; detected length 3.91--4.05\,s, consistent with
+$\approx$4\,s of contact time per run),
+(2) trim 0.15\,s at both ends to exclude tool entry/exit and the up-to-100\,ms misalignment between the two
+measurement chains, and
+(3) compute 21 features in this window: 8 from the machine control
+(e.g., mean $|$spindle torque$|$, mean $|$feed-axis effort$|$, standard deviation of the position control
+deviation) and 13 from the dynamometer (e.g., mean resultant force, amplitude at the tooth-passing
+frequency of 530\,Hz).
+We take absolute values of the spindle torque because its sign convention differs between machines.
+We also derive the layer index and the pass position within a layer, and store a 200-bin envelope of three
+signals per run for the drill-down view.
+The web application loads only compact files (a 1.2\,MB CSV with one row per run, 7.7\,MB of envelopes, and
+0.7\,MB of raw 20\,ms force snippets). Normalization, correlation, tool-life estimation and layer
+diagnostics are computed in the browser so that users can change their parameters
+(Section~7). % TODO: adjust the section number to your template
+To confirm the numbers, we recomputed the features independently for 40 random runs (maximum relative error
+$4\times10^{-4}$) and checked the values shown in the interface against the Python results.
+
+\paragraph{Known data limitations.}
+We show the following limitations in the interface and take them into account in our conclusions:
+VB was measured only every one or two layers ($\approx$40 runs) and is linearly interpolated in between;
+the first runs of T8 are missing (data start at $\mathrm{VB}=34\,\mu$m);
+spindle torque and feed-axis force on M2 may be aliased;
+the coordinate system of T7 and T8 was rotated by about 1--2$^\circ$;
+and all M2 tools come from a different tool batch than the others, so the effect of the machine cannot be
+separated from that of the batch.
+
+\section{Target Users and Analysis Challenges}
+\label{sec:users}
+\paragraph{Target users.}
+Our users are \textbf{process or maintenance engineers who introduce tool-condition monitoring on a fleet
+of machine tools}. Before deployment, such engineers run trials like the one in this dataset: tools are
+worn on several machines while machine signals are recorded, and wear is checked with a microscope;
+a dynamometer may be added in the trial. In production, however, dynamometers are rarely available
+because they are expensive, reduce the stiffness of the setup, and constrain the workpiece.
+% TODO: support this sentence with a tool-condition-monitoring review you have checked yourselves.
+Only the signals of the machine control remain. The engineers know machining well but have no time to
+build and validate custom analysis scripts for every machine.
+
+\paragraph{CH1: When should a tool be replaced?}
+Tool life varies across machines even with identical tools and parameters.
+To reach $\mathrm{VB}=140\,\mu$m, the M2 tools need 81.5--84.0\,min of contact time, whereas the M1 and M3
+tools need only 53.5--57.9\,min, and almost all of this difference arises in the steady middle phase of
+wear. A single fixed replacement time that is safe for every tool must follow the shortest-lived tool;
+this leaves 34--36\,\% of the life of each M2 tool unused. The threshold itself is a trade-off between
+quality risk and tool cost, which only the engineer can decide.
+
+\paragraph{CH2: Which production signal can serve as a wear indicator across machines?}
+There are many candidate features, and each can be normalized in several ways. Raw values cannot be
+compared across machines: pooled over all tools, the Spearman correlation between mean spindle torque and
+VB is only 0.57, but 0.97 after normalizing within each machine.
+Some features even change in opposite directions on different machines: the 530\,Hz tooth-passing
+amplitude rises with wear on M1 and M2 but falls on M3.
+Correlations within a single tool are also optimistic, because VB is mostly interpolated from contact time,
+so any monotonic drift correlates with it.
+Judging which indicator is trustworthy therefore requires comparing curves across tools and machines,
+not reading off a single coefficient.
+
+\paragraph{CH3: Is a signal change really wear?}
+Signals also change for reasons other than wear. In tool T1, every signal in layer 15 jumps by about
+20\,\% and drops again in the next layer. In tool T9, the force rises by 26--52\,\% within each of layers
+10--14 and resets at every new layer. Both effects appear in the machine signals and in the dynamometer,
+two independent measurement chains, so they are unlikely to be sensor faults. Wear, however, cannot
+decrease. An alarm based on the indicator alone would therefore suggest that wear suddenly accelerated
+and trigger an early replacement. Finding such cases requires looking at the raw signals and relating them
+to the layer structure, and their causes (for example, the machine stopping between layers for
+measurement) are not recorded in the data.
+
+\paragraph{Why visual analytics?}
+None of these challenges can be answered by a simple query or a single static chart.
+The answers depend on combinations of machine, tool, feature, normalization and threshold, and the
+interesting cases (such as T1 and T9) were not known before we explored the data.
+A fully automatic model is also not appropriate. With only nine tools (three per machine), it cannot be
+validated for new machines; most VB labels are interpolated; and unusual segments need a domain
+explanation. Most importantly, engineers must \emph{see the evidence} before they trust an indicator on the
+shop floor. WearLens therefore keeps the engineer in the loop: it provides the derived measures and lets
+the engineer judge them.
+
+\section{Low-Level Tasks}
+We derived seven tasks from the challenges (Table~\ref{tab:tasks}).
+T1--T2 address replacement timing (CH1),
+T3--T4 the choice of an indicator (CH2),
+T5--T6 the separation of wear from other effects (CH3), and
+T7 connects CH2 back to CH1 by translating an indicator level into a replacement rule
+that needs no microscope.
+
+\begin{table}[t]
+\centering\small
+\caption{Low-level tasks and the challenges they come from.}
+\label{tab:tasks}
+\begin{tabularx}{\linewidth}{@{}lXll@{}}
+\toprule
+ID & Task & Type & From \\
+\midrule
+T1 & Overview the wear curves of all tools and compare in which wear phase the machines differ & overview, compare & CH1 \\
+T2 & For a chosen VB threshold, identify when each tool reaches it and derive how much life a fixed replacement time leaves unused & identify, derive & CH1 \\
+T3 & Rank features by their correlation with wear for each tool and for all tools, under a chosen normalization and time range & rank, correlate & CH2 \\
+T4 & Compare the normalized trend of one feature across the three machines to judge whether it transfers & compare & CH2 \\
+T5 & Detect runs or layers that deviate from the wear trend and locate them in time and in the layer structure & detect outliers, locate & CH3 \\
+T6 & Inspect the signals of selected runs and check whether machine signals and the dynamometer reference agree & details on demand, verify & CH3 \\
+T7 & Read off the indicator level at which tools reach the VB threshold & correlate, derive & CH1+CH2 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% ---------------- bibliography entry (add to your .bib) ----------------
+% @article{denkena2023,
+%   author  = {Denkena, Berend and Klemme, Heinrich and Stiehl, Tobias H.},
+%   title   = {Multivariate time series data of milling processes with varying tool wear and machine tools},
+%   journal = {Data in Brief}, volume = {50}, pages = {109574}, year = {2023},
+%   doi     = {10.1016/j.dib.2023.109574} }
+% If your template has no \etal macro, replace "Denkena \etal" with "Denkena et al.".
