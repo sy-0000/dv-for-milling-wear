@@ -1,0 +1,186 @@
+{
+ "source": "Denkena, Klemme, Stiehl (2023) Data in Brief 50:109574; Mendeley Data doi:10.17632/zpxs87bjt8 (CC BY 4.0)",
+ "n_runs": 6418,
+ "machines": {
+  "1": {
+   "name": "DMG Mori Milltap 700",
+   "control": "Siemens 840D sl",
+   "drive": "ball screw",
+   "tools": [
+    1,
+    2,
+    3
+   ],
+   "batch": "A",
+   "axis_unit": "Nm"
+  },
+  "2": {
+   "name": "DMG Mori HSC 30 linear",
+   "control": "Siemens 840D sl",
+   "drive": "linear direct drive",
+   "tools": [
+    4,
+    5,
+    6
+   ],
+   "batch": "B",
+   "axis_unit": "N",
+   "note": "Spindle torque & feed-axis force may be aliased (control low-pass filter disabled)."
+  },
+  "3": {
+   "name": "DMG Mori HSC 55 linear",
+   "control": "Heidenhain iTNC 530",
+   "drive": "linear direct drive",
+   "tools": [
+    7,
+    8,
+    9
+   ],
+   "batch": "A",
+   "axis_unit": "N"
+  }
+ },
+ "tool_notes": {
+  "7": "XY coordinate system rotated ~1–2° (affects feed-axis & position signals).",
+  "8": "First runs missing (data start at C = 177 s, VB = 34 µm); XY rotated ~1–2°."
+ },
+ "tool_max_vb": {
+  "1": 158,
+  "2": 145,
+  "3": 152,
+  "4": 149,
+  "5": 148,
+  "6": 147,
+  "7": 153,
+  "8": 150,
+  "9": 160
+ },
+ "features": {
+  "Tsp_mean": {
+   "label": "Spindle torque, mean |T|",
+   "unit": "Nm",
+   "source": "machine"
+  },
+  "Tsp_std": {
+   "label": "Spindle torque, std",
+   "unit": "Nm",
+   "source": "machine"
+  },
+  "ax_x_mean": {
+   "label": "Feed axis X effort, mean |·|",
+   "unit": "Nm (M1) / N (M2, M3)",
+   "source": "machine"
+  },
+  "ax_y_mean": {
+   "label": "Feed axis Y effort, mean |·|",
+   "unit": "Nm (M1) / N (M2, M3)",
+   "source": "machine"
+  },
+  "ax_z_mean": {
+   "label": "Feed axis Z effort, mean |·|",
+   "unit": "Nm (M1) / N (M2, M3)",
+   "source": "machine"
+  },
+  "ax_y_std": {
+   "label": "Feed axis Y effort, std",
+   "unit": "Nm (M1) / N (M2, M3)",
+   "source": "machine"
+  },
+  "pcd_x_std": {
+   "label": "Position control deviation X, std",
+   "unit": "µm",
+   "source": "machine"
+  },
+  "pcd_y_std": {
+   "label": "Position control deviation Y, std",
+   "unit": "µm",
+   "source": "machine"
+  },
+  "Fxy_mean": {
+   "label": "Force |Fxy|, mean",
+   "unit": "N",
+   "source": "dynamometer"
+  },
+  "Fxy_p99": {
+   "label": "Force |Fxy|, 99th pct",
+   "unit": "N",
+   "source": "dynamometer"
+  },
+  "Fx_mean": {
+   "label": "Force X, mean |·|",
+   "unit": "N",
+   "source": "dynamometer"
+  },
+  "Fy_mean": {
+   "label": "Force Y, mean |·|",
+   "unit": "N",
+   "source": "dynamometer"
+  },
+  "Fz_mean": {
+   "label": "Force Z, mean |·|",
+   "unit": "N",
+   "source": "dynamometer"
+  },
+  "Fx_std": {
+   "label": "Force X, std",
+   "unit": "N",
+   "source": "dynamometer"
+  },
+  "Fy_std": {
+   "label": "Force Y, std",
+   "unit": "N",
+   "source": "dynamometer"
+  },
+  "Fz_std": {
+   "label": "Force Z, std",
+   "unit": "N",
+   "source": "dynamometer"
+  },
+  "A_tooth": {
+   "label": "Tooth-pass amplitude 530 Hz",
+   "unit": "N",
+   "source": "dynamometer"
+  },
+  "A_spindle": {
+   "label": "Spindle-freq amplitude 133 Hz",
+   "unit": "N",
+   "source": "dynamometer"
+  },
+  "runout_ratio": {
+   "label": "Runout ratio (133 Hz / 530 Hz)",
+   "unit": "–",
+   "source": "dynamometer"
+  },
+  "entry_peak": {
+   "label": "Entry peak |Fxy|",
+   "unit": "N",
+   "source": "dynamometer"
+  },
+  "exit_peak": {
+   "label": "Exit peak |Fxy|",
+   "unit": "N",
+   "source": "dynamometer"
+  }
+ },
+ "envelopes": {
+  "file": "envelopes.bin",
+  "dtype": "uint16",
+  "n_bins": 200,
+  "channels": [
+   "|Fxy| RMS [N]",
+   "|torque_spindle| [Nm]",
+   "|feed axis Y| [Nm or N]"
+  ],
+  "scales": [
+   0.014892805371175709,
+   2.9847481307698176e-05,
+   0.021896696421759364
+  ]
+ },
+ "limitations": [
+  "VB was measured by microscope only every 1–2 layers (~40 runs); other runs are linearly interpolated.",
+  "Force (dynamometer) and control signals may be misaligned by up to ~100 ms.",
+  "M2 tools (T4–T6) come from tool batch B, all others from batch A: machine and batch effects are confounded.",
+  "Each tool ran on one machine only; 3 tools per machine."
+ ]
+}

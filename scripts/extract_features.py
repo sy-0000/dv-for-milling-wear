@@ -192,7 +192,7 @@ def main():
     print(f"rows={len(df)} errors={len(errs)} label mismatches vs filelist={len(bad)}")
     df.to_csv(OUT / "features.csv", index=False, float_format="%.6g")
     SIG.mkdir(parents=True, exist_ok=True)
-    np.savez_compressed(SIG / "envelopes.npz", env=np.stack(envs).astype(np.float16), files=df.file.values.astype(str),
+    np.savez_compressed(SIG / "envelopes.npz", env=np.stack(envs).astype(np.float16), files=np.array(df.file.tolist(), dtype=str),
                         channels=np.array(["Fxy_rms_N", "torque_spindle_abs", "axis_y_abs"]),
                         t_end=df.t_end.values.astype(np.float32))
     rep = [rep_signals(fn, df.set_index("file").loc[fn].to_dict() | {"file": fn}) for fn in representative(df)]
