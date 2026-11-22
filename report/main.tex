@@ -1,24 +1,337 @@
-% WearLens report -- standalone main file (compiles as is on Overleaf with pdfLaTeX).
-% When you move to the course template: copy the preamble packages you need, then put
-% \input{sections_1_5} and \input{sections_6_8} after \begin{document} and \maketitle.
-\documentclass[10pt,twocolumn]{article}
+% WearLens final report -- course template (IEEE VGTC conference style).
+% Overleaf: upload this folder (main.tex, refs.bib, vgtc.cls, abbrv-doi*.bst, figs/), compiler pdfLaTeX.
+% Every number is traceable to data/verify_expected.json (scripts/verify.py) and was checked in the browser
+% (scripts/verify_app.js). Lines marked TODO need team input.
+\documentclass{vgtc}                          % final (conference style)
 \usepackage[utf8]{inputenc}
-\usepackage[T1]{fontenc}
-\usepackage[margin=2cm]{geometry}
+\usepackage{textcomp}
+\graphicspath{{figs/}{./}}
+\usepackage{times}
+\renewcommand*\ttdefault{txtt}
+\usepackage{amsmath}
+\usepackage{mathptmx}
 \usepackage{booktabs}
-\usepackage{graphicx}
-\usepackage{hyperref}
+\usepackage{subcaption}
+
+\onlineid{0}
+\vgtccategory{Research}
+\vgtcinsertpkg
 
 \title{WearLens: Visual Analytics of End-Mill Wear across Machine Tools}
-\author{Name A (Student ID, email) \and Name B (Student ID, email) \and Name C (Student ID, email)} % TODO
-\date{}
+
+\author{Member One (Student ID)\thanks{e-mail: member1@example.com}% TODO
+\and Member Two (Student ID)\thanks{e-mail: member2@example.com}%
+\and Member Three (Student ID)\thanks{e-mail: member3@example.com}}
+\affiliation{\scriptsize Team XX, National Taiwan Normal University} % TODO
+
+\teaser{
+  \centering
+  \includegraphics[width=\linewidth]{teaser}
+  \caption{WearLens. Top: guided steps and global controls (feature, normalization, VB limit, layer-flag
+  thresholds, machine legend). V1~wear curves per end mill, V2~replacement rules, V3~correlation ranking,
+  V4~feature against wear, V5~run timeline of one end mill, V6~details of one run. Enlarged panels of V2, V5 and
+  V6 are in \cref{fig:s1,fig:s2}, of V1, V3 and V4 in \cref{fig:closeup}.}
+  \label{fig:teaser}
+}
+
+\abstract{Replacing milling tools after a fixed time wastes tool life, but replacing them based on machine
+signals is hard to set up on several machines. WearLens is a visual analytics system for process engineers
+who introduce tool-condition monitoring on several machine tools. Using an open trial dataset of nine end mills
+worn on three machines (6,418 milling runs), it lets them compare fixed-time and signal-based replacement rules
+under the same leave-one-out test, check whether a machine-control signal transfers between machines, and
+inspect layer-related signal changes before trusting an alarm. In our scenarios, a fixed time per machine
+beats a spindle-torque alarm, alarm levels do not transfer between machines, and a single layer-boundary
+event explains the largest alarm error.}
+
+\keywords{Visual analytics, tool-condition monitoring, milling, tool wear, D3.js}
 
 \begin{document}
-\maketitle
-\input{sections_1_5}
-\input{sections_6_8}
-% TODO: Section 9 (limitations and future work) and Section 10 (team contributions)
 
-\bibliographystyle{plain}
+\firstsection{Overview}
+\maketitle
+
+During machining, cutting tools wear, and a worn tool degrades product quality and process stability.
+Tools are therefore usually replaced after a predefined period, which wastes much of the remaining life of
+most tools~\cite{denkena2023}. Measuring wear directly requires stopping the machine and inspecting the tool
+under a microscope, so engineers would like to replace tools based on signals that the machine control already
+records. Doing so on several machines is difficult, because tool life and signal levels differ between
+machines. \textbf{WearLens} helps engineers compare replacement rules, test whether a production signal works
+on a machine it was not calibrated on, and decide whether a suspicious signal change is caused by wear.
+
+%% ------------------------------------------------------------------
+\section{Data and Data Processing}
+\label{sec:data}
+We use the open dataset of Denkena et al.~\cite{denkena2023} (Mendeley Data,
+\href{https://doi.org/10.17632/zpxs87bjt8}{doi:10.17632/zpxs87bjt8}, CC~BY~4.0), according to its authors the
+first public dataset of tool-life trajectories on several machine tools; it has not been used in our course.
+Nine end mills of the same model (8\,mm, 4 cutting edges) were worn from new to their end of life by shoulder
+milling of cast iron on three 5-axis machining centres with the same NC program and parameters. We call them
+\textbf{E1--E9} (M1: E1--E3, M2: E4--E6, M3: E7--E9); the M2 end mills come from tool batch B, all others from
+batch A. A \emph{run} is one straight pass with about 4\,s of cutting (one HDF5 file); 44 runs remove one 2\,mm
+\emph{layer} (about 2.4\,min of cutting). The dataset has \textbf{6,418 runs} (10.6\,GB).
+\emph{Flank wear} VB is the width of the worn band on the cutting edges, measured under a microscope and
+averaged over four edges; the authors end the tool life at $\mathrm{VB}\approx150\,\mu$m. Each run holds time
+series from two independent chains: the machine control (500\,Hz) and a dynamometer, a force sensor below
+the workpiece (25\,kHz) (\cref{tab:attributes}).
+
+\begin{table}[tb]
+  \caption{Attributes used by WearLens (one value per run unless noted).}
+  \label{tab:attributes}
+  \scriptsize\centering
+  \begin{tabular}{@{}p{0.21\columnwidth}p{0.19\columnwidth}p{0.48\columnwidth}@{}}
+    \toprule
+    Attribute & Type & Description \\
+    \midrule
+    Machine, end mill & Categorical & 3 machines, 9 end mills \\
+    Run, layer & Ordinal & pass counter; layer derived from tool position \\
+    Contact time $C$ & Quantitative & cumulated cutting time before the run [s] \\
+    Flank wear VB & Quantitative & microscope measurement [$\mu$m] \\
+    Machine signals & Time series, 500\,Hz & spindle torque; feed-drive \emph{effort}: torque (M1) or force (M2, M3); position control deviation \\
+    Dynamometer & Time series, 25\,kHz & forces $F_x, F_y, F_z$; reference only \\
+    21 features & Quantitative & derived per run, see text \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\textbf{Preprocessing (Python, offline).} After checking all files against their checksums and the file list,
+we detect the cutting window of each run from the dynamometer force (moving RMS) and trim 0.15\,s at both ends
+to exclude tool entry and exit and a possible 100\,ms misalignment between the chains. In this window we
+compute 21 features: 8 from the machine control (e.g., mean absolute spindle torque; absolute because the sign
+convention differs between machines) and 13 from the dynamometer (e.g., the force amplitude at the 530\,Hz
+tooth-passing frequency). We also store a 200-bin envelope of three signals per run. The browser loads
+9.6\,MB of compact files and computes all analysis itself. An independent recomputation of two features for 40
+random runs differed by at most $4\times10^{-4}$, and the numbers shown by the interface match our Python
+results.
+\textbf{Limitations stated by the authors.} VB was measured only every one or two layers (2.4--4.7\,min of
+cutting) and is linearly interpolated in between; the first runs of E8 are missing; M2's spindle torque and
+feed-drive force may be aliased; the coordinate system of E7 and E8 was rotated by 1--2$^\circ$.
+
+%% ------------------------------------------------------------------
+\section{Target Users and Analysis Challenges}
+\label{sec:users}
+Our users are process or maintenance engineers who introduce tool-condition monitoring on several machine
+tools. Before deployment they run trials like this one: tools are worn on each machine, machine signals are
+recorded, and wear is checked with a microscope. A dynamometer may be added in a trial, but it is impractical in
+industrial use because of its cost and overload protection, and it limits the part size and the rigidity of the
+setup; spindle motor current, in contrast, is the main signal of commercial monitoring systems~\cite{mohamed2022}.
+In production only machine-control signals remain; the trial data decide the rule that will run there.
+
+\textbf{Terms.} A \emph{normalization} makes a feature comparable between end mills: dividing by the same end
+mill's median in its first 3--6\,min of contact time (computable in production), dividing by its median at
+VB\,=\,50--60\,$\mu$m, or a z-score within each machine (both trial only). A \emph{signal alarm} fires when the
+trailing median of the last 15 runs (computable online) stays above an \emph{alarm level} for a number of
+consecutive runs, the \emph{persistence}. To \emph{calibrate} a level, WearLens takes the median smoothed signal of
+a set of end mills when they reach the VB limit: the other two machines, the other end mills of the same machine
+(\emph{leave-one-out}), or all end mills of the machine (in-sample). The \emph{error} of a rule is its replacement or
+alarm time minus the time at which VB reaches the limit (negative: early; otherwise late, an \emph{overrun});
+an end mill reaching the limit without an alarm is \emph{missed}. The mean absolute error (MAE) covers end mills
+that alarm; missed ones are always reported separately. The \emph{wear phases} are the fast initial, slow middle
+and accelerated final wear (\cref{fig:motivation}a).
+
+\textbf{CH1: Which replacement rule should be used?} The engineer can replace tools after a fixed contact time
+(one for all machines or one per machine) or when a signal alarm fires; each rule trades unused life against
+overruns. Tool life varies even under constant parameters~\cite{denkena2023}, and here it also differs between
+machines (\cref{fig:motivation}a). The difference cannot be attributed to the machines alone (batch B on M2), and
+with three end mills per machine any rule fitted to them is optimistic for the next tool.
+
+\textbf{CH2: Which production signal can serve as an indicator on another machine?} There are many features and
+three normalizations. Raw values differ between machines (\cref{fig:motivation}b), and the feed-drive signal has
+different units on M1 and M2/M3. The correlation of a feature with VB inside one end mill is inflated, because VB
+is interpolated from contact time, so any drifting signal correlates with it; a high correlation is only a
+necessary condition, and transfer to another machine must be tested there.
+
+\textbf{CH3: Is a signal change caused by wear?} In \cref{fig:motivation}b, the spindle torque of E1 jumps by
+19\,\% at the start of layer 15 and falls back in the next layer, although wear cannot decrease. Machining is
+interrupted between layers for the microscope, but the dataset does not record what changed. WearLens flags
+such layers automatically, but a flag only shows \emph{where} a signal is unusual, not whether an alarm raised
+there should be trusted, postponed, or followed by an inspection.
+
+\begin{figure}[tb]
+  \centering
+  \includegraphics[width=\columnwidth]{motivation}
+  \caption{(a) Wear curves of all end mills. (b) Raw spindle torque against wear (median over 15 runs); levels
+  differ by machine. Colour and line style encode the machine.}
+  \label{fig:motivation}
+\end{figure}
+
+\textbf{Why visual analytics?} No single chart answers these questions: a rule's outcome depends on feature,
+normalization, calibration, alarm level, persistence and VB limit together. One could search this space
+automatically and even mark errors that fall into flagged layers. With three end mills per machine, however,
+one event such as the E1 jump decides whether a setting looks good. Whether the event should change the rule
+depends on what it is (a sensor fault, a process change, or real wear), which requires comparing spindle
+torque, feed-drive effort and the dynamometer around it: a judgement based on domain knowledge, not an
+optimization target. Choosing between early and missed alarms is a decision about cost and quality risk.
+
+%% ------------------------------------------------------------------
+\section{Low-Level Tasks}
+\label{sec:tasks}
+T1--T2 address CH1, T3--T4 CH2 and T5--T6 CH3; T7 tests a signal rule on end mills not used for calibration
+(CH1, CH2), and T6 links its result back to CH3. A \emph{time range} is an interval of $C$; a \emph{layer flag} marks a
+layer whose median differs from its neighbours (\emph{jump}) or changes within the layer (\emph{rise}) by more than a
+user-set percentage. The per-end-mill correlation in T3 is used for screening only. The machine--batch
+confounding cannot be resolved with this data; WearLens labels it wherever machines are compared.
+\begin{itemize}
+  \item[\textbf{T1}] Overview the wear curves and compare in which wear phase the machines differ (overview, compare).
+  \item[\textbf{T2}] For a VB limit, compare the unused life and overruns of fixed-time rules (compare, derive).
+  \item[\textbf{T3}] Screen features by Spearman $\rho$ with VB per end mill and pooled, across normalizations and time ranges (rank, correlate).
+  \item[\textbf{T4}] Compare the normalized trend of one feature across the machines (compare).
+  \item[\textbf{T5}] Identify layers whose jump or rise exceeds a threshold (detect outliers).
+  \item[\textbf{T6}] For an early alarm, check whether it was raised in a flagged layer, compare its signals with the previous layer and the dynamometer, and decide whether to trust it (verify, details on demand).
+  \item[\textbf{T7}] Calibrate an alarm level on other end mills or machines, test it, and compare errors across persistence settings (derive, compare).
+\end{itemize}
+
+%% ------------------------------------------------------------------
+\section{System Design}
+\label{sec:design}
+WearLens is a single D3.js~\cite{Bostock:2011:D3} page with six coordinated views (\cref{fig:teaser}) that follow
+overview, filter and details on demand~\cite{Shneiderman:1996:TEH}. Three guided steps set the controls for
+CH1--CH3 and show a guiding question. In V1, V2 and V4--V6 colour encodes only the machine, with three hues whose
+worst pairwise distance under simulated colour-vision deficiency is $\Delta E_{\mathrm{OK}}=9.2$ (OKLab
+$\times100$; 8 is a common target); trend lines add a line style per machine, and machines are labelled in text.
+End mills are not coloured, because nine hues cannot be told apart. V3 uses its own diverging scale. Dynamometer
+features are greyed and marked ``reference only''. Different units are stacked in panels instead of dual
+axes. The views use different horizontal axes on purpose (contact time, VB, run) and are linked by highlighting.
+\Cref{fig:closeup} enlarges V1, V3 and V4.
+
+\begin{figure*}[tb]
+  \centering
+  \includegraphics[width=\linewidth]{closeup_v1_v3_v4}
+  \caption{Close-ups of V1 (wear curves, E1 selected), V3 (Spearman $\rho$; spindle torque selected) and V4 (normalized
+  spindle torque against VB; band = level at VB\,=\,140\,$\mu$m). Production normalization, VB limit 140\,$\mu$m.}
+  \label{fig:closeup}
+\end{figure*}
+
+\textbf{V1 Wear curves (T1).} Small multiples (one row per machine, shared scales) show VB against contact time.
+Aligned rows compare wear phases between machines while each panel stays selectable and brushable; an overlay
+(\cref{fig:motivation}a) compares machines directly but hides individual end mills.
+\textbf{V2 Replacement rules (T2, T6, T7).} Each end mill is a bar from zero to the time at which VB reaches the
+limit, split into the part used before replacement (saturated), unused life (light) or overrun (hatched); a dot
+plot would show only end points. Fixed times are a draggable line or, in leave-one-out mode, a tick per end mill;
+in signal mode a triangle marks the alarm. A summary reports MAE and early, late and missed end mills.
+\textbf{V3 Correlation ranking (T3).} A heatmap shows Spearman $\rho$ per feature (rows) and end mill or pooled
+(columns) on a diverging blue--grey--red scale with printed values; a matrix reveals machine-specific blocks that
+one ranked column would hide. Rows re-sort with an animated transition so the user can follow a feature.
+\textbf{V4 Feature against wear (T4, T7).} A scatterplot of all runs at low opacity with a rolling median per end
+mill; a band shows the per-end-mill level at the VB limit, from which alarm levels are calibrated. Hexagonal
+binning would hide machine identity.
+\textbf{V5 Run timeline (T5, T6).} The feature per run of one end mill, with layer bands, J/R flags and a count of
+flagged layers; in signal mode, the trailing median, alarm level and alarm. Only a timeline shows the layer
+structure; plotting against VB would compress runs that share an interpolated VB.
+\textbf{V6 Run details (T6).} Envelopes of spindle torque, feed-drive effort and dynamometer force in stacked panels
+with a shared time axis, a pinned comparison run in grey, and a 20\,ms raw force snippet.
+\textbf{Coordination.} Brushing a time range in V1 recomputes V3 and fades other runs in V4 and V5; brushing in V4
+highlights runs in V1 and V5; a row click in V3 sets the feature of V2, V4 and V5; selecting an end mill highlights
+it everywhere; a run click in V4 or V5 opens it in V6 (\cref{tab:mapping}).
+
+\begin{table}[tb]
+  \caption{Task--design mapping; every view and control serves a task.}
+  \label{tab:mapping}
+  \scriptsize\centering
+  \begin{tabular}{@{}p{0.07\columnwidth}p{0.28\columnwidth}p{0.53\columnwidth}@{}}
+    \toprule
+    Task & Views & Interactions / analysis \\
+    \midrule
+    T1 & V1 & select end mill, VB limit, step 1 \\
+    T2 & V2 (fixed), V1 & drag time, per machine, leave-one-out; A3 \\
+    T3 & V3 & normalization, V1 time brush, step 2; A1, A2 \\
+    T4 & V4, V3 & select feature, normalization, brush; A1 \\
+    T5 & V5 & jump and rise thresholds, step 3; A4 \\
+    T6 & V5, V6, V2 & select and pin runs, dynamometer toggle; A3, A4 \\
+    T7 & V2 (signal), V4, V5 & calibration, level, persistence; A1, A3 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+%% ------------------------------------------------------------------
+\section{Analysis Component}
+\label{sec:analysis}
+All components run in the browser; every parameter can be changed and all views update immediately.
+\textbf{A1 Normalization} offers the three normalizations labelled ``production'' or ``trial only'', so the user sees
+whether a feature's quality depends on information that will not exist in production (T3, T4, T7).
+\textbf{A2 Correlation ranking} recomputes Spearman $\rho$ per end mill and pooled for the current normalization and
+time range (T3); it screens features and does not validate them.
+\textbf{A3 Replacement-rule evaluation.} Fixed times are one per fleet or machine (default: earliest life in the
+group; draggable) or leave-one-out (earliest life of the \emph{other} end mills of the machine). The signal alarm
+compares the trailing median with a level set manually or calibrated on the other machines, leave-one-out, or
+in-sample, and fires after the persistence. Both rule types report every end mill's error, MAE, and the numbers of
+early, late and missed end mills, so rules are compared under the same test (T2, T6, T7).
+\textbf{A4 Layer diagnostics.} For layer $\ell$ with median $m_\ell$, the jump is $j_\ell=m_\ell/\tfrac12(m_{\ell-1}+m_{\ell+1})-1$;
+$|j_\ell|$ is flagged only at local maxima, because a jump also appears in the neighbours. The rise is the change of
+a linear fit across the layer divided by $m_\ell$. Both use the raw feature and user thresholds (T5, T6).
+Together, A1--A4 let the user state a hypothesis (``a signal rule replaces fixed times'', ``this early alarm is caused
+by one layer'') and test it in the same session.
+
+%% ------------------------------------------------------------------
+\section{Usage Scenarios and Insights}
+\label{sec:scenarios}
+The engineer uses the spindle torque, the production normalization and a VB limit of 140\,$\mu$m.
+
+\textbf{Scenario 1: Fixed time or signal alarm? (CH1, CH2).} In V1 the M2 end mills differ mainly in the slow
+middle phase (T1). In V2, one time for all machines (53.5\,min) leaves 34--36\,\% of each M2 end mill's life unused;
+one time per machine reduces the mean unused life to 1.9\,\% (T2). Because these times are fitted to the end mills
+they are evaluated on, the engineer switches to leave-one-out (\cref{fig:s1}a): MAE 1.7\,min, three overruns of at
+most 2.0\,min, none missed. In V3 the spindle torque has $\rho\ge0.97$ in every end mill and 0.95 pooled, against
+0.57 with raw values (T3), and in V4 the machines rise in the same direction (T4). A level calibrated on the other
+two machines alarms 5.8--14.7\,min early on M1 and M2 and misses all M3 end mills, so levels do not transfer.
+Calibrated leave-one-out (\cref{fig:s1}b), the alarm has an MAE of 4.7\,min over eight alarms, one late alarm (E3,
+2.7\,min) and one missed end mill (E5) (T7). \textbf{Insight:} under the same test, a fixed time per machine beats
+the spindle-torque alarm, because the lives of the end mills on one machine differ less than the alarm error. For
+this tool and process the trial supports per-machine fixed times; a signal alarm would need machine-specific
+calibration and serve at most as a safety net. Three end mills per machine and VB measurements every
+2.4--4.7\,min limit both conclusions.
+
+\begin{figure}[tb]
+  \centering
+  \includegraphics[width=\columnwidth]{scenario1_col}
+  \caption{Scenario 1 in V2, both rules tested leave-one-out. (a) Fixed time per machine: dashed ticks are the
+  replacement times. (b) Spindle-torque alarm: triangles are alarms; light bars are the life until VB\,=\,140\,$\mu$m.}
+  \label{fig:s1}
+\end{figure}
+
+\textbf{Scenario 2: How one event shapes the rule (CH3, CH1).} The largest alarm error belongs to E1 (12.3\,min
+early at VB\,=\,103\,$\mu$m) under every calibration. V5 shows the alarm in layer 15, one of only two flagged layers
+among 222 at the default thresholds (the other is E3's first layer, during break-in) (T5; \cref{fig:s2}). The
+engineer pins run 420 of layer 14 and opens run 443 in V6 (T6): spindle torque and dynamometer force are higher
+over the whole run, the feed-drive effort barely changes. Two independent chains agree, so a sensor fault is
+unlikely; the torque falls back in layer 16, so it is not wear. Absorbing the event needs a persistence longer than a
+layer: with the out-of-machine level and 29 runs the alarm is still 9.9\,min early, because the whole layer is high;
+with 30 runs it moves to 0.5\,min early, but the same persistence leaves five of nine end mills without an alarm under
+in-sample calibration. The engineer keeps a persistence of one run and adds a rule: an alarm in a flagged layer
+triggers an inspection, not a replacement. The early alarms of E2--E9 are not in flagged layers, so they come from
+the level itself; without E1 the leave-one-out MAE is 3.6\,min, still above 1.7\,min. \textbf{Insight:} one
+layer-boundary event dominated the evaluation of the signal rule; identifying it showed that the rule's remaining
+weakness is the alarm level, confirming Scenario~1.
+
+\begin{figure}[tb]
+  \centering
+  \includegraphics[width=\columnwidth]{scenario2_col}
+  \caption{Scenario 2. V5: E1 with trailing median (black), alarm level (dashed) and alarm (triangle) in layer 15,
+  flagged J. V6: run 443 (layer 15) against the pinned run 420 (layer 14, grey).}
+  \label{fig:s2}
+\end{figure}
+
+%% ------------------------------------------------------------------
+\section{Limitations and Future Work}
+\label{sec:limitations}
+\textbf{Data.} Three end mills per machine, one process setting and interpolated VB labels limit every conclusion;
+machine and tool batch are confounded on M2, and we do not identify which VB values were measured.
+\textbf{System.} Layer flags locate unusual layers but cannot explain them, since stops and re-clamping are not
+recorded. V5 draws runs less than a pixel apart, so a click may select a neighbouring run (the tooltip shows which);
+6,418 SVG points can slow brushing on low-end laptops, and the full interface is hard to read when printed.
+\textbf{Future work.} Recover measured VB points from changes in the slope of VB, add zooming to V5, combine several
+features in one alarm, and validate the rules on more tools per machine.
+
+%% ------------------------------------------------------------------
+\section{Team Contributions}
+\label{sec:contributions}
+% TODO: replace with the real division of work.
+\begin{itemize}
+  \item Member One: \ldots
+  \item Member Two: \ldots
+  \item Member Three: \ldots
+\end{itemize}
+
+\bibliographystyle{abbrv-doi-hyperref}
 \bibliography{refs}
+
 \end{document}

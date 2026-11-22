@@ -45,12 +45,13 @@
     <p class="hint">VB vs cumulated contact time. Drag horizontally to filter a time range · click a panel to select the tool.</p>
     <div class="plot"></div></section>
   <section class="view" id="v2"><h2>V2 · Replacement rules vs the VB threshold <span class="tag">analysis</span></h2>
-    <p class="hint">Rule: <span id="v2-mode" class="seg-inline"><button data-mode="fleet" class="on">fixed time · all machines</button><button data-mode="machine">fixed time · per machine</button><button data-mode="signal">signal alarm</button></span></p>
-    <p class="hint" id="v2-fixed-hint">Drag the dashed line = fixed replacement time.</p>
+    <p class="hint">Rule: <span id="v2-mode" class="seg-inline"><button data-mode="fleet" class="on">fixed time · all machines</button><button data-mode="machine">fixed time · per machine</button><button data-mode="machineLoo">per machine · leave-one-out</button><button data-mode="signal">signal alarm</button></span></p>
+    <p class="hint" id="v2-fixed-hint">Drag the dashed line = fixed replacement time. Leave-one-out: each end mill gets the earliest life of the <i>other</i> end mills of its machine.</p>
     <div class="hint" id="v2-signal-ctl" hidden>Alarm when the trailing median (15 runs) of the <b>selected feature</b> stays ≥ level for
       <input type="number" id="v2-persist" min="1" max="120" step="1" value="1" style="width:4em"> runs. Level:
       <label><input type="radio" name="cal" value="other" checked> calibrated on the other machines</label>
-      <label><input type="radio" name="cal" value="own"> calibrated on own machine <i>(in-sample)</i></label>
+      <label><input type="radio" name="cal" value="loo"> same machine, other end mills <i>(leave-one-out)</i></label>
+      <label><input type="radio" name="cal" value="insample"> same machine incl. itself <i>(in-sample)</i></label>
       <label><input type="radio" name="cal" value="manual"> manual <input type="number" id="v2-level" step="0.01" value="1.25" style="width:5em"></label></div>
     <div class="plot"></div><p class="summary" id="v2-summary"></p></section>
   <section class="view" id="v3"><h2>V3 · Which signal follows wear? <span class="tag">analysis</span></h2>
@@ -61,7 +62,7 @@
       <label class="chk small"><input type="checkbox" id="v4-lines" checked> trend lines</label> <span class="small">(M1 solid · M2 dashed · M3 dotted)</span></p>
     <div class="plot"></div></section>
   <section class="view" id="v5"><h2>V5 · Run timeline of <select id="v5-tool"></select> <span class="tag">analysis</span></h2>
-    <p class="hint">Shaded bands = layers (29 runs each). Flags: <b>J</b> = jump vs neighbouring layers, <b>R</b> = rise within the layer. In signal-alarm mode: black line = trailing median (15 runs), dashed = alarm level. Click a run for details.</p>
+    <p class="hint">Shaded bands = layers (29 runs each). Flags: <b>J</b> = jump vs neighbouring layers, <b>R</b> = rise within the layer. In signal-alarm mode: black line = trailing median (15 runs), dashed = alarm level. Click a run for details. <b id="v5-count"></b></p>
     <div class="plot"></div></section>
   <section class="view" id="v6"><h2>V6 · Run details</h2>
     <p class="hint" id="v6-head">Click a run in V4 or V5.</p>
