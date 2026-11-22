@@ -13,7 +13,7 @@
 ## 交件前必改(TODO)
 1. 作者、學號、email、組別(`\author`、`\affiliation`)。
 2. 第 9 節 Team Contributions。
-3. `refs.bib` 裡的 `TODO_dynamometer`:換成你們讀過、確實支持「測力計很少用在產線」的文獻。
+3. (已完成)測力計的引用已改為 Mohamed et al. (2022), Sensors 22(6):2206,依據該文 Sec. 2.1.1 與 2.1.4。
 
 ## 重新產生圖片
 在 `web/` 啟動本機伺服器(port 8765)後:
