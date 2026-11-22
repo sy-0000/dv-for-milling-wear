@@ -35,3 +35,19 @@ def stack(parts, out):
 stack([labelled("raw_s1_fixed_loo.png", "(a) Fixed time per machine, leave-one-out"),
        labelled("raw_s1_signal_loo.png", "(b) Signal alarm, level leave-one-out")], "scenario1_col.png")
 stack([labelled("raw_s2_v5.png", "V5"), labelled("raw_s2_v6.png", "V6")], "scenario2_col.png")
+
+
+def side(names, out, gap=16):
+    ims = [Image.open(FIG / n).convert("RGB") for n in names]
+    h = max(i.height for i in ims)
+    ims = [i.resize((round(i.width * h / i.height), h)) for i in ims]
+    im = Image.new("RGB", (sum(i.width for i in ims) + gap * (len(ims) - 1), h), "white")
+    x = 0
+    for i in ims:
+        im.paste(i, (x, 0))
+        x += i.width + gap
+    im.save(FIG / out, optimize=True)
+    print(out, im.size)
+
+
+side(["raw_v1.png", "raw_v3.png", "raw_v4.png"], "closeup_v1_v3_v4.png")
