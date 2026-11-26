@@ -1,5 +1,5 @@
 // V1 · Wear curves as 3×3 small multiples (rows = machines). Brush x to filter a contact-time range.
-import { state, set } from "./state.js";
+import { state, set, ACCENT, GRAY, BAND } from "./state.js";
 
 let ctx, root, cells = [], x, y;
 const H = 104, M = { t: 16, r: 8, b: 18, l: 30 };
@@ -29,7 +29,7 @@ function render() {
     g.append("g").attr("class", "axis").attr("transform", `translate(0,${ih})`)
       .call(d3.axisBottom(x).tickValues([0, 30, 60, 90]).tickSize(3));
     g.append("line").attr("x1", 0).attr("x2", iw).attr("y1", y(state.vbThr)).attr("y2", y(state.vbThr))
-      .attr("stroke", "#0b0b0b").attr("stroke-dasharray", "3 3").attr("stroke-width", 1);
+      .attr("stroke", GRAY).attr("stroke-dasharray", "3 3").attr("stroke-width", 1);
     g.append("path").datum(rs).attr("fill", "none").attr("stroke", ctx.color(m)).attr("stroke-width", 2)
       .attr("d", d3.line().x((r) => x(r.C_min)).y((r) => y(r.VB_um)));
     g.append("g").attr("class", "marks");
@@ -74,14 +74,14 @@ function highlight() {
     c.g.select(".ttl").attr("text-decoration", c.t === state.tool ? "underline" : null);
     c.g.selectAll(".sel-frame").remove();
     if (c.t === state.tool) c.g.insert("rect", ":first-child").attr("class", "sel-frame").attr("x", -2).attr("y", -2)
-      .attr("width", c.iw + 4).attr("height", c.ih + 4).attr("fill", "#f1f0ec");
+      .attr("width", c.iw + 4).attr("height", c.ih + 4).attr("fill", BAND);
     const marks = [];
     if (state.brushed) c.rs.forEach((r) => state.brushed.has(r.i) && marks.push({ r, k: "b" }));
     if (state.runIdx != null && ctx.runs[state.runIdx].tool === c.t) marks.push({ r: ctx.runs[state.runIdx], k: "s" });
     c.g.select(".marks").selectAll("circle").data(marks).join("circle")
       .attr("cx", (d) => x(d.r.C_min)).attr("cy", (d) => y(d.r.VB_um))
       .attr("r", (d) => (d.k === "s" ? 4.5 : 2.2))
-      .attr("fill", (d) => (d.k === "s" ? "none" : "#0b0b0b"))
-      .attr("stroke", (d) => (d.k === "s" ? "#0b0b0b" : "none")).attr("stroke-width", 1.5);
+      .attr("fill", (d) => (d.k === "s" ? "none" : ACCENT))
+      .attr("stroke", (d) => (d.k === "s" ? ACCENT : "none")).attr("stroke-width", 1.5);
   });
 }

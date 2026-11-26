@@ -90,7 +90,8 @@ function fillFeatureSelect() {
 }
 fillFeatureSelect();
 fSel.onchange = () => set({ feature: fSel.value });
-document.querySelectorAll("input[name=norm]").forEach((el) => (el.onchange = () => set({ norm: el.value })));
+const nSel = document.getElementById("ctl-norm");
+nSel.onchange = () => set({ norm: nSel.value });
 document.getElementById("ctl-dyn").onchange = (e) => {
   const patch = { showDyn: e.target.checked };
   if (!e.target.checked && meta.features[state.feature].source === "dynamometer") patch.feature = "Tsp_mean";
@@ -103,17 +104,20 @@ const bindRange = (id, out, key, unit) => {
 bindRange("ctl-thr", "out-thr", "vbThr", "µm");
 bindRange("ctl-jump", "out-jump", "jumpThr", "%");
 bindRange("ctl-rise", "out-rise", "riseThr", "%");
-document.getElementById("ctl-reset").onclick = () =>
+document.getElementById("ctl-reset").onclick = () => leaveStep() ||
   set({ cRange: null, brushed: null, runIdx: null, pinIdx: null, fix: { mode: state.fix.mode, fleet: null, m: { 1: null, 2: null, 3: null } } });
 
 d3.select("#legend").selectAll("span").data(Object.entries(meta.machines)).join("span")
-  .html(([m, d]) => `<i style="background:${MACHINE_COLOR[m]}"></i>M${m} ${d.name.replace("DMG Mori ", "")} (E${d.tools[0]}–E${d.tools[2]})`)
+  .html(([m, d]) => `<i style="background:${MACHINE_COLOR[m]}"></i>M${m} · E${d.tools[0]}–E${d.tools[2]}`)
   .attr("title", ([, d]) => `${d.name}, ${d.control}, ${d.drive}, tool batch ${d.batch}${d.note ? " — " + d.note : ""}`);
-document.getElementById("limitations").innerHTML = "<b>Data limitations:</b> " + meta.limitations.join(" · ");
+document.getElementById("limitations").innerHTML = meta.limitations.join("<br>");
 
 function syncControls() {
   if (fSel.value !== state.feature) fSel.value = state.feature;
-  document.querySelectorAll("input[name=norm]").forEach((el) => (el.checked = el.value === state.norm));
+  nSel.value = state.norm;
+  const prod = state.norm === "early" || state.norm === "raw", badge = document.getElementById("norm-badge");
+  badge.textContent = prod ? "production" : "trial only";
+  badge.classList.toggle("warn", !prod);
   document.getElementById("ctl-dyn").checked = state.showDyn;
   for (const [id, out, key, unit] of [["ctl-thr", "out-thr", "vbThr", "µm"], ["ctl-jump", "out-jump", "jumpThr", "%"],
     ["ctl-rise", "out-rise", "riseThr", "%"]]) {
@@ -146,19 +150,31 @@ const GUIDE = {
        note: "④ Where does the largest error come from? In V5, compare flagged layers (J = jump, R = rise) with the alarm. "
            + "Pin a run before the flagged layer and open one inside it in V6. Is it wear? Then try a longer persistence in V2." },
 };
+// Focus per step: views of the active step stay normal, the others fade (hover restores them). Clicking the active step,
+// ✕ or Reset leaves the step.
+let activeStep = null;
+function leaveStep() {
+  activeStep = null;
+  document.querySelectorAll(".guide button").forEach((x) => x.classList.remove("on"));
+  document.querySelectorAll(".view").forEach((v) => v.classList.remove("dim"));
+  document.getElementById("guide-note").hidden = true;
+  measureBar();
+}
+document.getElementById("guide-close").onclick = () => leaveStep();
 document.querySelectorAll(".guide button").forEach((b) => (b.onclick = () => {
-  const g = GUIDE[b.dataset.step];
+  if (activeStep === b.dataset.step) return leaveStep();
+  activeStep = b.dataset.step;
+  const g = GUIDE[activeStep];
   document.querySelectorAll(".guide button").forEach((x) => x.classList.toggle("on", x === b));
   const note = document.getElementById("guide-note");
-  note.textContent = g.note;
+  note.querySelector("span").textContent = g.note;
   note.hidden = false;
   set(g.patch);
   measureBar();
-  document.querySelectorAll(".view").forEach((v) => v.classList.toggle("flash", g.views.includes(v.id)));
+  document.querySelectorAll(".view").forEach((v) => v.classList.toggle("dim", !g.views.includes(v.id)));
   // scroll to the step row of the first evidence view; the scoreboard (V2) is always visible on wide screens
   const target = g.views.map((id) => document.getElementById(id).closest(".step")).find(Boolean);
   target.scrollIntoView({ behavior: "smooth", block: "start" });
-  setTimeout(() => document.querySelectorAll(".view").forEach((v) => v.classList.remove("flash")), 2500);
 }));
 
 // sticky bar height -> CSS variable, so the sticky scoreboard and scroll targets sit below it
@@ -166,6 +182,24 @@ function measureBar() {
   document.documentElement.style.setProperty("--bar-h", `${document.getElementById("bar").offsetHeight}px`);
 }
 measureBar();
+
+// ---------- ⓘ popovers: long explanations are hidden next to the panel title (click / tap to open) ----------
+document.querySelectorAll(".info").forEach((btn) => {
+  const body = document.getElementById(btn.getAttribute("aria-controls"));
+  btn.onclick = (ev) => {
+    ev.stopPropagation();
+    const open = body.hidden;
+    document.querySelectorAll(".info-body").forEach((b) => (b.hidden = true));
+    document.querySelectorAll(".info").forEach((b) => b.setAttribute("aria-expanded", "false"));
+    body.hidden = !open;
+    btn.setAttribute("aria-expanded", String(open));
+  };
+});
+document.addEventListener("click", (ev) => {
+  if (ev.target.closest(".info-body")) return;
+  document.querySelectorAll(".info-body").forEach((b) => (b.hidden = true));
+  document.querySelectorAll(".info").forEach((b) => b.setAttribute("aria-expanded", "false"));
+});
 
 // ---------- wire up ----------
 derive();

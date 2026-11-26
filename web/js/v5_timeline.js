@@ -1,5 +1,5 @@
 // V5 · Run timeline of the selected tool: feature per run, layer bands, layer-level flags (jump / rise), VB strip.
-import { state, set } from "./state.js";
+import { state, set, ACCENT, INK, INK2, GRAY, BAND } from "./state.js";
 import { normLabel } from "./analysis.js";
 
 let ctx, root;
@@ -41,13 +41,16 @@ function render() {
   // layer bands + flags
   layers.forEach((l, k) => {
     const x0 = x(runOf(l.i0) - 0.5), x1 = x(runOf(l.i1) + 0.5);
-    if (k % 2) g.append("rect").attr("x", x0).attr("width", x1 - x0).attr("y", 0).attr("height", ih + GAP + VBH).attr("fill", "#f1f0ec");
+    // background recedes: a very faint band on every other layer + a fine tick at each layer boundary (instead of strong stripes)
+    if (k % 2) g.append("rect").attr("x", x0).attr("width", x1 - x0).attr("y", 0).attr("height", ih + GAP + VBH).attr("fill", BAND).attr("opacity", 0.7);
+    if (k) g.append("line").attr("x1", x0).attr("x2", x0).attr("y1", ih - 4).attr("y2", ih).attr("stroke", "#c9c8c3");
     const flags = [];
     if (l.jumpPeak && Math.abs(l.jump) >= state.jumpThr) flags.push("J");
     if (Math.abs(l.rise) >= state.riseThr) flags.push("R");
     if (flags.length) {
-      g.append("rect").attr("x", x0).attr("width", x1 - x0).attr("y", -18).attr("height", 14).attr("rx", 3).attr("fill", "#6250d6");
-      g.append("text").attr("x", (x0 + x1) / 2).attr("y", -8).attr("text-anchor", "middle").attr("fill", "#fff").attr("font-size", 9)
+      // flagged layer = suspicious change: the single accent colour
+      g.append("rect").attr("x", x0).attr("width", x1 - x0).attr("y", -17).attr("height", 13).attr("rx", 3).attr("fill", ACCENT);
+      g.append("text").attr("x", (x0 + x1) / 2).attr("y", -7).attr("text-anchor", "middle").style("fill", "#fff").attr("font-size", 10).attr("font-weight", 600)
         .text(flags.join(""));
     }
     g.append("rect").attr("x", x0).attr("width", x1 - x0).attr("y", -18).attr("height", ih + 18 + GAP + VBH).attr("fill", "transparent")
@@ -64,7 +67,7 @@ function render() {
   g.append("path").datum(rs).attr("fill", "none").attr("stroke", c).attr("stroke-width", 1).attr("opacity", 0.6)
     .attr("d", d3.line().x((r) => x(r.run)).y((r) => y(yv[r.i])));
   g.append("g").selectAll("circle").data(rs).join("circle").attr("cx", (r) => x(r.run)).attr("cy", (r) => y(yv[r.i]))
-    .attr("r", (r) => (state.brushed?.has(r.i) ? 3 : 2)).attr("fill", (r) => (state.brushed?.has(r.i) ? "#0b0b0b" : c))
+    .attr("r", (r) => (state.brushed?.has(r.i) ? 3 : 2)).attr("fill", (r) => (state.brushed?.has(r.i) ? ACCENT : c))
     .attr("opacity", (r) => (ctx.inRange(r) ? 1 : 0.2)).style("cursor", "pointer")
     .on("mousemove", (ev, r) => ctx.tip.show(`<b>run ${r.run}</b> · layer ${r.layer} · x = ${r.x_pass} mm<br>`
       + `C = ${r.C_min.toFixed(1)} min · VB = ${r.VB_um} µm<br>${info.label}: ${ctx.fmt(r[f])} ${info.unit}`, ev))
@@ -74,10 +77,10 @@ function render() {
   // VB strip (separate scale, no dual axis)
   const gb = g.append("g").attr("transform", `translate(0,${ih + GAP})`);
   gb.append("g").attr("class", "axis").call(d3.axisLeft(yb).tickValues([0, 150]).tickSize(3));
-  gb.append("path").datum(rs).attr("fill", "none").attr("stroke", "#52514e").attr("stroke-width", 1.5)
+  gb.append("path").datum(rs).attr("fill", "none").attr("stroke", INK2).attr("stroke-width", 1.5)
     .attr("d", d3.line().x((r) => x(r.run)).y((r) => yb(r.VB_um)));
   gb.append("line").attr("x1", 0).attr("x2", iw).attr("y1", yb(state.vbThr)).attr("y2", yb(state.vbThr))
-    .attr("stroke", "#0b0b0b").attr("stroke-dasharray", "3 3");
+    .attr("stroke", GRAY).attr("stroke-dasharray", "3 3");
   gb.append("text").attr("class", "lbl-2").attr("x", 0).attr("y", -5).text("↑ VB [µm] (interpolated between measurements)");
   gb.append("g").attr("class", "axis").attr("transform", `translate(0,${VBH})`).call(d3.axisBottom(x).ticks(8));
   gb.append("text").attr("class", "lbl-2").attr("x", iw).attr("y", VBH + 26).attr("text-anchor", "end").text("run");
@@ -85,23 +88,23 @@ function render() {
   if (state.runIdx != null && ctx.runs[state.runIdx].tool === state.tool) {
     const r = ctx.runs[state.runIdx];
     g.append("line").attr("x1", x(r.run)).attr("x2", x(r.run)).attr("y1", -2).attr("y2", ih + GAP + VBH)
-      .attr("stroke", "#0b0b0b").attr("stroke-width", 1.5).attr("pointer-events", "none");
+      .attr("stroke", ACCENT).attr("stroke-width", 1.5).attr("pointer-events", "none");
   }
   // signal-alarm overlay: trailing median (what an online monitor sees), alarm level, alarm run
   if (state.fix.mode === "signal") {
     const a = ctx.alarms.find((d) => d.tool === state.tool);
-    g.append("path").datum(rs).attr("fill", "none").attr("stroke", "#0b0b0b").attr("stroke-width", 1.4)
+    g.append("path").datum(rs).attr("fill", "none").attr("stroke", INK).attr("stroke-width", 1.4)
       .attr("d", d3.line().defined((r) => Number.isFinite(ctx.trail[r.i])).x((r) => x(r.run)).y((r) => y(ctx.trail[r.i])))
       .attr("pointer-events", "none");
     if (Number.isFinite(a.level) && a.level >= y.domain()[0] && a.level <= y.domain()[1]) {
       g.append("line").attr("x1", 0).attr("x2", iw).attr("y1", y(a.level)).attr("y2", y(a.level))
-        .attr("stroke", "#0b0b0b").attr("stroke-dasharray", "6 3").attr("pointer-events", "none");
+        .attr("stroke", INK2).attr("stroke-dasharray", "6 3").attr("pointer-events", "none");
       g.append("text").attr("class", "halo").attr("x", iw - 4).attr("y", y(a.level) - 4).attr("text-anchor", "end")
         .text(`alarm level ${ctx.fmt(a.level)}`);
     }
     if (a.alarm) {
       g.append("path").attr("d", d3.symbol(d3.symbolTriangle, 50)()).attr("transform", `translate(${x(a.alarm.run)},${y(ctx.trail[a.alarm.i]) - 10}) rotate(180)`)
-        .attr("fill", "#0b0b0b").attr("pointer-events", "none");
+        .attr("fill", ACCENT).attr("pointer-events", "none");
       const right = x(a.alarm.run) < iw * 0.6;
       g.append("text").attr("class", "halo").attr("x", x(a.alarm.run) + (right ? 8 : -8)).attr("y", y(ctx.trail[a.alarm.i]) + 4)
         .attr("text-anchor", right ? "start" : "end").attr("font-weight", 600).text(`▼ alarm: run ${a.alarm.run}, VB ${a.alarm.VB_um} µm`);
@@ -110,6 +113,6 @@ function render() {
   if (state.pinIdx != null && ctx.runs[state.pinIdx].tool === state.tool) {
     const r = ctx.runs[state.pinIdx];
     g.append("line").attr("x1", x(r.run)).attr("x2", x(r.run)).attr("y1", -2).attr("y2", ih + GAP + VBH)
-      .attr("stroke", "#8a8984").attr("stroke-width", 1.5).attr("stroke-dasharray", "4 2").attr("pointer-events", "none");
+      .attr("stroke", GRAY).attr("stroke-width", 1.5).attr("stroke-dasharray", "4 2").attr("pointer-events", "none");
   }
 }

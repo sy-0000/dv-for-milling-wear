@@ -1,6 +1,6 @@
 // V6 · Details of the selected run: envelopes of machine signals (+ dynamometer reference), pinned comparison run,
 // and a 20 ms raw force snippet from the nearest representative run of the same tool.
-import { state, set } from "./state.js";
+import { state, set, INK2, GRAY, BAND } from "./state.js";
 
 let ctx, root;
 const M = { t: 18, r: 10, b: 26, l: 48 }, PH = 72; // each panel: 14 px title row above a PH-14-4 px plot
@@ -39,12 +39,13 @@ async function render() {
     .attr("role", "img").attr("aria-label", "Signal envelopes of the selected run");
   panels.forEach((p, k) => {
     const g = svg.append("g").attr("transform", `translate(${M.l},${M.t + k * PH})`), ih = PH - 18;
-    const series = [{ run: r, v: ctx.envelope(r.i, p.ch), col: p.src === "machine" ? ctx.color(r.machine) : "#52514e" }];
-    if (pin) series.unshift({ run: pin, v: ctx.envelope(pin.i, p.ch), col: "#b9b8b2" });
+    const series = [{ run: r, v: ctx.envelope(r.i, p.ch), col: p.src === "machine" ? ctx.color(r.machine) : INK2 }];
+    if (pin) series.unshift({ run: pin, v: ctx.envelope(pin.i, p.ch), col: "#c9c8c3" });
     const y = d3.scaleLinear().domain([0, d3.max(series, (s) => d3.max(s.v)) * 1.05]).range([ih, 0]);
-    g.append("rect").attr("x", x(r.t_on)).attr("width", x(r.t_off) - x(r.t_on)).attr("height", ih).attr("fill", "#f1f0ec");
-    g.append("rect").attr("x", x(r.t_on + 0.15)).attr("width", x(r.t_off - 0.15) - x(r.t_on + 0.15)).attr("height", ih)
-      .attr("fill", "#e5e4de");
+    // background recedes: detected cut = very faint band, feature window = two thin edge lines (data lines stay dominant)
+    g.append("rect").attr("x", x(r.t_on)).attr("width", x(r.t_off) - x(r.t_on)).attr("height", ih).attr("fill", BAND);
+    for (const tw of [r.t_on + 0.15, r.t_off - 0.15]) g.append("line").attr("x1", x(tw)).attr("x2", x(tw)).attr("y1", 0).attr("y2", ih)
+      .attr("stroke", "#d6d5d0").attr("stroke-dasharray", "2 2");
     g.append("g").attr("class", "axis").call(d3.axisLeft(y).ticks(3).tickSize(3));
     series.forEach((s) => {
       const nb = s.v.length, dt = s.run.t_end / nb;
@@ -56,7 +57,7 @@ async function render() {
     if (k === panels.length - 1) {
       g.append("g").attr("class", "axis").attr("transform", `translate(0,${ih})`).call(d3.axisBottom(x).ticks(6));
       g.append("text").attr("class", "lbl-2").attr("x", iw).attr("y", ih + 24).attr("text-anchor", "end")
-        .text("time within run [s] · shaded = detected cut, darker = window used for features");
+        .text("time within run [s]");
     }
   });
 
@@ -74,6 +75,6 @@ async function render() {
     .text(`|Fxy| [N] at 25 kHz, 20 ms of run ${s.run} (VB ${s.VB_um} µm) · peaks = cutting edges`);
   g.append("g").attr("class", "axis").call(d3.axisLeft(ys).ticks(3).tickSize(3));
   g.append("g").attr("class", "axis").attr("transform", `translate(0,${sh})`).call(d3.axisBottom(xs).ticks(5).tickFormat((d) => `${d} ms`));
-  g.append("path").datum(v).attr("fill", "none").attr("stroke", "#52514e").attr("stroke-width", 1.2)
+  g.append("path").datum(v).attr("fill", "none").attr("stroke", INK2).attr("stroke-width", 1.2)
     .attr("d", d3.line().x((d, j) => xs((j / s.fs) * 1000)).y((d) => ys(d)));
 }

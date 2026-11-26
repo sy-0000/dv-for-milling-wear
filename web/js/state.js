@@ -1,5 +1,9 @@
 // Global UI state with a tiny publish/subscribe mechanism.
-export const MACHINE_COLOR = { 1: "#2a78d6", 2: "#eb6834", 3: "#1baf7a" };
+// Muted, colour-vision-safe machine hues (same values as --m1..--m3 in style.css; validated with the dataviz
+// skill's validate_palette.js) and the single accent reserved for alarms and selected objects.
+export const MACHINE_COLOR = { 1: "#4a76b8", 2: "#c4862e", 3: "#3f9b78" };
+export const ACCENT = "#b0306f";
+export const INK = "#1d1d1b", INK2 = "#5c5b57", GRAY = "#8f8e89", BAND = "#f5f4f1";
 // secondary encoding (colour-vision deficiency): line style per machine
 export const MACHINE_DASH = { 1: null, 2: "7 3", 3: "2 2" };
 
