@@ -122,23 +122,29 @@ function syncControls() {
   }
 }
 
-// ---------- guided steps (apply settings + point at the relevant views) ----------
+// ---------- guided steps (follow the demo narrative: apply settings + point at the relevant views) ----------
 const GUIDE = {
   1: { patch: { feature: "Tsp_mean", norm: "early", vbThr: 140, cRange: null, brushed: null, tool: 4,
                 fix: { mode: "fleet", fleet: null, m: { 1: null, 2: null, 3: null } } },
        views: ["v1", "v2"],
-       note: "① Compare the wear curves (V1) and the replacement rules (V2). How much life does one fixed time for all machines "
-           + "leave unused, and how does that change with one time per machine? Remember: machine and tool batch are confounded." },
-  2: { patch: { norm: "early", cRange: null, brushed: null, showDyn: true },
-       views: ["v3", "v4", "v2"],
-       note: "② Which production signal (top rows of V3) follows wear in every end mill with a production-feasible normalization? "
-           + "Check in V4 whether the machines share one curve, then switch V2 to 'signal alarm' calibrated on the other machines: "
-           + "does one alarm level transfer to a new machine?" },
-  3: { patch: { feature: "Tsp_mean", norm: "early", tool: 1, runIdx: null, brushed: null, showDyn: true,
+       note: "① V1: each machine has its own tool life (end mills in one row almost overlap). V2: one fixed time for all machines "
+           + "wastes 34–36 % of every M2 end mill. Alternatives: one time per machine, or let a machine signal tell when. "
+           + "Machine and tool batch are confounded." },
+  2: { patch: { feature: "Tsp_mean", norm: "early", cRange: null, brushed: null, showDyn: true },
+       views: ["v3", "v4", "v6"],
+       note: "② Hypothesis: a worn tool needs more force to keep the same speed and feed. V3: does a production signal follow wear "
+           + "in every end mill, and how close is it to the dynamometer? V4: do all machines rise? Optional: pin an early run "
+           + "and open a late run of the same end mill in V6." },
+  3: { patch: { feature: "Tsp_mean", norm: "early", cRange: null, brushed: null,
+                fix: { mode: "signal", fleet: null, m: { 1: null, 2: null, 3: null } }, alarm: { cal: "other", level: 1.25, persist: 1 } },
+       views: ["v2", "v4"],
+       note: "③ A trend is not yet a replacement time. V2: an alarm level calibrated on the other machines — does it work on a new machine? "
+           + "Compare the band heights in V4. Then switch the level to 'same machine, other end mills' and compare with the baseline in the scoreboard." },
+  4: { patch: { feature: "Tsp_mean", norm: "early", tool: 1, runIdx: null, brushed: null, showDyn: true,
                 fix: { mode: "signal", fleet: null, m: { 1: null, 2: null, 3: null } }, alarm: { cal: "other", level: 1.25, persist: 1 } },
        views: ["v5", "v6", "v2"],
-       note: "③ In V5, compare flagged layers (J = jump, R = rise) with the alarm line. Open runs before and inside a flagged layer in V6. "
-           + "Is it wear? Then try a longer persistence in V2 and see what it does to false and late alarms." },
+       note: "④ Where does the largest error come from? In V5, compare flagged layers (J = jump, R = rise) with the alarm. "
+           + "Pin a run before the flagged layer and open one inside it in V6. Is it wear? Then try a longer persistence in V2." },
 };
 document.querySelectorAll(".guide button").forEach((b) => (b.onclick = () => {
   const g = GUIDE[b.dataset.step];
@@ -147,10 +153,19 @@ document.querySelectorAll(".guide button").forEach((b) => (b.onclick = () => {
   note.textContent = g.note;
   note.hidden = false;
   set(g.patch);
+  measureBar();
   document.querySelectorAll(".view").forEach((v) => v.classList.toggle("flash", g.views.includes(v.id)));
-  document.getElementById(g.views[0]).scrollIntoView({ behavior: "smooth", block: "center" });
+  // scroll to the step row of the first evidence view; the scoreboard (V2) is always visible on wide screens
+  const target = g.views.map((id) => document.getElementById(id).closest(".step")).find(Boolean);
+  target.scrollIntoView({ behavior: "smooth", block: "start" });
   setTimeout(() => document.querySelectorAll(".view").forEach((v) => v.classList.remove("flash")), 2500);
 }));
+
+// sticky bar height -> CSS variable, so the sticky scoreboard and scroll targets sit below it
+function measureBar() {
+  document.documentElement.style.setProperty("--bar-h", `${document.getElementById("bar").offsetHeight}px`);
+}
+measureBar();
 
 // ---------- wire up ----------
 derive();
@@ -162,4 +177,4 @@ on((keys) => {
   VIEWS.forEach((v) => v.update(keys));
 });
 let rt;
-addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => VIEWS.forEach((v) => v.update(null)), 200); });
+addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => { measureBar(); VIEWS.forEach((v) => v.update(null)); }, 200); });

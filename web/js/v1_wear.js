@@ -2,7 +2,7 @@
 import { state, set } from "./state.js";
 
 let ctx, root, cells = [], x, y;
-const H = 96, M = { t: 16, r: 8, b: 18, l: 30 };
+const H = 104, M = { t: 16, r: 8, b: 18, l: 30 };
 
 export function init(c) { ctx = c; root = d3.select("#v1 .plot"); render(); }
 
@@ -33,7 +33,7 @@ function render() {
     g.append("path").datum(rs).attr("fill", "none").attr("stroke", ctx.color(m)).attr("stroke-width", 2)
       .attr("d", d3.line().x((r) => x(r.C_min)).y((r) => y(r.VB_um)));
     g.append("g").attr("class", "marks");
-    const title = g.append("text").attr("x", 4).attr("y", -4).attr("font-weight", 600).style("cursor", "pointer")
+    const title = g.append("text").attr("class", "ttl").attr("x", 4).attr("y", -4).attr("font-weight", 600).style("cursor", "pointer")
       .text(`E${t} · M${m}`);
     const note = ctx.meta.tool_notes[t];
     if (t === 8) g.append("text").attr("class", "note halo").attr("x", iw - 2).attr("text-anchor", "end").attr("y", ih - 4).text("no data before C = 3 min");
@@ -70,7 +70,8 @@ function syncBrush() {
 
 function highlight() {
   cells.forEach((c) => {
-    c.g.select("text").attr("text-decoration", c.t === state.tool ? "underline" : null);
+    // select the panel title by class: the first <text> is an empty grid tick (fix: underline never showed)
+    c.g.select(".ttl").attr("text-decoration", c.t === state.tool ? "underline" : null);
     c.g.selectAll(".sel-frame").remove();
     if (c.t === state.tool) c.g.insert("rect", ":first-child").attr("class", "sel-frame").attr("x", -2).attr("y", -2)
       .attr("width", c.iw + 4).attr("height", c.ih + 4).attr("fill", "#f1f0ec");

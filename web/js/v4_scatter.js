@@ -3,7 +3,7 @@ import { state, set, MACHINE_DASH } from "./state.js";
 import { normLabel, median } from "./analysis.js";
 
 let ctx, root, x, y, g, dots, delaunay, pts;
-const M = { t: 16, r: 12, b: 34, l: 40 }, H = 300;
+const M = { t: 34, r: 12, b: 34, l: 40 }, H = 330;
 
 export function init(c) {
   ctx = c;
@@ -31,7 +31,7 @@ function render() {
   g.append("g").attr("class", "axis").call(d3.axisLeft(y).ticks(5));
   g.append("g").attr("class", "axis").attr("transform", `translate(0,${ih})`).call(d3.axisBottom(x).ticks(8));
   g.append("text").attr("class", "lbl-2").attr("x", iw).attr("y", ih + 28).attr("text-anchor", "end").text("VB [µm]");
-  g.append("text").attr("class", "lbl-2 halo").attr("x", 6).attr("y", -1).text(`↑ ${info.label} [${normLabel(state.norm, info.unit)}]`);
+  g.append("text").attr("class", "lbl-2").attr("x", -M.l + 2).attr("y", -20).text(`↑ ${info.label} [${normLabel(state.norm, info.unit)}]`);
   if (state.norm === "raw" && f.startsWith("ax_")) g.append("text").attr("class", "note halo").attr("x", 6).attr("y", 12)
     .text("raw units differ: M1 in Nm (ball screw), M2/M3 in N (linear motor) — use a normalization");
   if (info.source === "dynamometer") g.append("text").attr("class", "note halo").attr("x", 6).attr("y", 24)
@@ -45,9 +45,12 @@ function render() {
   if (per.length) {
     const [lo, hi] = d3.extent(per);
     g.append("rect").attr("x", 0).attr("width", iw).attr("y", y(hi)).attr("height", Math.max(1, y(lo) - y(hi)))
-      .attr("fill", "#6250d6").attr("opacity", 0.12);
-    g.append("text").attr("class", "halo").attr("x", iw - 4).attr("text-anchor", "end").attr("y", y(hi) - 4).attr("font-weight", 600)
+      .attr("fill", "#52514e").attr("opacity", 0.12); // neutral gray: purple is reserved for the layer flags in V5 (C4)
+    // band label in the top margin with a swatch, so the trend lines can no longer cover it (B5)
+    const bl = g.append("text").attr("x", iw).attr("text-anchor", "end").attr("y", -6).attr("font-weight", 600)
       .text(`at VB ${state.vbThr} µm: ${ctx.fmt(lo)} – ${ctx.fmt(hi)} (${per.length} tools)`);
+    const bw = bl.node().getComputedTextLength();
+    g.append("rect").attr("x", iw - bw - 16).attr("y", -15).attr("width", 11).attr("height", 10).attr("fill", "#52514e").attr("opacity", 0.25);
   }
 
   pts = ctx.runs.map((r) => ({ r, px: x(r.VB_um), py: y(yv[r.i]) })).filter((p) => Number.isFinite(p.py));

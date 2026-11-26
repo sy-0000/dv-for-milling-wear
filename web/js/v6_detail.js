@@ -3,7 +3,7 @@
 import { state, set } from "./state.js";
 
 let ctx, root;
-const M = { t: 6, r: 10, b: 26, l: 48 }, PH = 62;
+const M = { t: 18, r: 10, b: 26, l: 48 }, PH = 72; // each panel: 14 px title row above a PH-14-4 px plot
 
 export function init(c) { ctx = c; root = d3.select("#v6 .plot"); render(); }
 
@@ -38,7 +38,7 @@ async function render() {
   const svg = root.append("svg").attr("width", W).attr("height", panels.length * PH + M.t + M.b + 8)
     .attr("role", "img").attr("aria-label", "Signal envelopes of the selected run");
   panels.forEach((p, k) => {
-    const g = svg.append("g").attr("transform", `translate(${M.l},${M.t + k * PH})`), ih = PH - 12;
+    const g = svg.append("g").attr("transform", `translate(${M.l},${M.t + k * PH})`), ih = PH - 18;
     const series = [{ run: r, v: ctx.envelope(r.i, p.ch), col: p.src === "machine" ? ctx.color(r.machine) : "#52514e" }];
     if (pin) series.unshift({ run: pin, v: ctx.envelope(pin.i, p.ch), col: "#b9b8b2" });
     const y = d3.scaleLinear().domain([0, d3.max(series, (s) => d3.max(s.v)) * 1.05]).range([ih, 0]);
@@ -51,7 +51,8 @@ async function render() {
       g.append("path").datum(s.v).attr("fill", "none").attr("stroke", s.col).attr("stroke-width", 1.6)
         .attr("d", d3.line().x((v, j) => x((j + 0.5) * dt)).y((v) => y(v)));
     });
-    g.append("text").attr("class", p.src === "machine" ? "halo" : "lbl-2 halo").attr("x", 30).attr("y", 9).text(p.label);
+    // panel title above the plot, not on top of the envelope (the curves reach the top of the y range)
+    g.append("text").attr("class", p.src === "machine" ? null : "lbl-2").attr("x", 0).attr("y", -4).text(p.label);
     if (k === panels.length - 1) {
       g.append("g").attr("class", "axis").attr("transform", `translate(0,${ih})`).call(d3.axisBottom(x).ticks(6));
       g.append("text").attr("class", "lbl-2").attr("x", iw).attr("y", ih + 24).attr("text-anchor", "end")
@@ -70,7 +71,7 @@ async function render() {
   const xs = d3.scaleLinear().domain([0, (v.length / s.fs) * 1000]).range([0, iw]);
   const ys = d3.scaleLinear().domain([0, d3.max(v) * 1.05]).range([sh, 0]);
   g.append("text").attr("class", "lbl-2").attr("y", -4)
-    .text(`|Fxy| 25 kHz, 20 ms of run ${s.run} (VB ${s.VB_um} µm) · peaks = cutting edges`);
+    .text(`|Fxy| [N] at 25 kHz, 20 ms of run ${s.run} (VB ${s.VB_um} µm) · peaks = cutting edges`);
   g.append("g").attr("class", "axis").call(d3.axisLeft(ys).ticks(3).tickSize(3));
   g.append("g").attr("class", "axis").attr("transform", `translate(0,${sh})`).call(d3.axisBottom(xs).ticks(5).tickFormat((d) => `${d} ms`));
   g.append("path").datum(v).attr("fill", "none").attr("stroke", "#52514e").attr("stroke-width", 1.2)

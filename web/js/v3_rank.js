@@ -3,11 +3,21 @@ import { state, set } from "./state.js";
 import { normalize, spearman } from "./analysis.js";
 
 let ctx, root, svg, g, layout = {};
+let sortKey = "min"; // min = lowest per-end-mill ρ (follows wear in EVERY end mill?) | pooled
 const M = { t: 30, r: 8, b: 30, l: 158 }, ROWH = 15;
 const color = d3.scaleDiverging().domain([-1, 0, 1]).clamp(true)
   .interpolator(d3.piecewise(d3.interpolateLab, ["#1f5fae", "#e9e8e4", "#c43b3a"]));
 
-export function init(c) { ctx = c; root = d3.select("#v3 .plot"); render(true); }
+export function init(c) {
+  ctx = c;
+  root = d3.select("#v3 .plot");
+  d3.selectAll("#v3-sort button").on("click", function () {
+    sortKey = this.dataset.sort;
+    d3.selectAll("#v3-sort button").classed("on", function () { return this.dataset.sort === sortKey; });
+    render(false);
+  });
+  render(true);
+}
 
 export function update(keys) {
   if (!keys) return render(true);
@@ -32,8 +42,10 @@ function compute() {
 
 function render(rebuild) {
   const rows = compute();
-  // order: machine group first, then by pooled rho (descending) within group
-  const order = d3.groups(rows, (r) => r.src).flatMap(([, v]) => v.sort((a, b) => d3.descending(a.pooled, b.pooled)));
+  // order: machine group first, then within the group by the lowest per-end-mill rho (default: the task is
+  // "does it follow wear in every end mill?", A3) or by the pooled rho
+  const key = (r) => (sortKey === "min" ? r.minTool : r.pooled);
+  const order = d3.groups(rows, (r) => r.src).flatMap(([, v]) => v.sort((a, b) => d3.descending(key(a), key(b))));
   const W = root.node().clientWidth, iw = W - M.l - M.r;
   const cols = [...ctx.tools.map((t) => `E${t}`), "All"];
   const xb = d3.scaleBand().domain(cols).range([0, iw]).paddingInner(0.06);
@@ -71,12 +83,16 @@ function render(rebuild) {
     (enter) => {
       const e = enter.append("g").attr("class", "row").attr("transform", (r) => `translate(0,${yPos.get(r.f)})`)
         .style("cursor", "pointer").on("click", (ev, r) => set({ feature: r.f }));
+      e.append("title");
       e.append("text").attr("class", "rl").attr("x", -6).attr("y", ROWH / 2 + 3).attr("text-anchor", "end");
       e.append("g").attr("class", "cells");
       return e;
     });
   rowSel.transition(t).attr("transform", (r) => `translate(0,${yPos.get(r.f)})`);
-  rowSel.select(".rl").text((r) => ctx.meta.features[r.f].label.slice(0, 30))
+  // shorten long labels with an ellipsis (no half words) and keep the full name as a tooltip
+  const short = (s) => (s.length > 29 ? s.slice(0, 28).replace(/[\s,|(]+$/, "") + "…" : s);
+  rowSel.select("title").text((r) => ctx.meta.features[r.f].label);
+  rowSel.select(".rl").text((r) => short(ctx.meta.features[r.f].label))
     .attr("fill", (r) => (r.src === "machine" ? "#0b0b0b" : "#52514e"));
   rowSel.select(".cells").selectAll("g.cell").data((r) => r.cells.map((c) => ({ ...c, f: r.f }))).join((e) => {
     const c = e.append("g").attr("class", "cell");
