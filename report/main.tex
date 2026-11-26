@@ -34,8 +34,8 @@
   \label{fig:teaser}
 }
 
-\abstract{Replacing milling tools after a fixed time wastes tool life, but replacing them based on machine
-signals is hard to set up on several machines. WearLens is a visual analytics system for process engineers
+\abstract{Replacing the milling tools of all machines after one fixed time wastes tool life when tool life differs
+between machines, but replacing them based on machine signals is hard to set up on several machines. WearLens is a visual analytics system for process engineers
 who introduce tool-condition monitoring on several machine tools. Using an open trial dataset of nine end mills
 worn on three machines (6,418 milling runs), it lets them compare fixed-time and signal-based replacement rules
 under the same leave-one-out test, check whether a machine-control signal transfers between machines, and
@@ -52,7 +52,7 @@ event explains the largest alarm error.}
 
 During machining, cutting tools wear, and a worn tool degrades product quality and process stability.
 Tools are therefore usually replaced after a predefined period, which wastes much of the remaining life of
-most tools~\cite{denkena2023}. Measuring wear directly requires stopping the machine and inspecting the tool
+most tools~\cite{denkena2023}, all the more if one period is used for machines with different tool life. Measuring wear directly requires stopping the machine and inspecting the tool
 under a microscope, so engineers would like to replace tools based on signals that the machine control already
 records. Doing so on several machines is difficult, because tool life and signal levels differ between
 machines. \textbf{WearLens} helps engineers compare replacement rules, test whether a production signal works
@@ -70,7 +70,8 @@ milling of cast iron on three 5-axis machining centres with the same NC program 
 batch A. A \emph{run} is one straight pass with about 4\,s of cutting (one HDF5 file); 44 runs remove one 2\,mm
 \emph{layer} (about 2.4\,min of cutting). The dataset has \textbf{6,418 runs} (10.6\,GB).
 \emph{Flank wear} VB is the width of the worn band on the cutting edges, measured under a microscope and
-averaged over four edges; the authors end the tool life at $\mathrm{VB}\approx150\,\mu$m. Each run holds time
+averaged over four edges; the authors end the tool life at $\mathrm{VB}\approx150\,\mu$m. The M2 end mills stop at 147--149\,$\mu$m, so
+we use a VB limit of 140\,$\mu$m by default (adjustable). Each run holds time
 series from two independent chains: the machine control (500\,Hz) and a dynamometer, a force sensor below
 the workpiece (25\,kHz) (\cref{tab:attributes}).
 
@@ -130,8 +131,9 @@ and accelerated final wear (\cref{fig:motivation}a).
 
 \textbf{CH1: Which replacement rule should be used?} The engineer can replace tools after a fixed contact time
 (one for all machines or one per machine) or when a signal alarm fires; each rule trades unused life against
-overruns. Tool life varies even under constant parameters~\cite{denkena2023}, and here it also differs between
-machines (\cref{fig:motivation}a). The difference cannot be attributed to the machines alone (batch B on M2), and
+overruns. Tool life varies even under constant parameters~\cite{denkena2023}; here it differs between machines
+(\cref{fig:motivation}a), but within a machine the lives until 140\,$\mu$m differ by at most 3.4\,min, so a signal
+rule must beat a fixed time per machine, not only one for all machines. The machine difference cannot be attributed to the machines alone (batch B on M2), and
 with three end mills per machine any rule fitted to them is optimistic for the next tool.
 
 \textbf{CH2: Which production signal can serve as an indicator on another machine?} There are many features and
