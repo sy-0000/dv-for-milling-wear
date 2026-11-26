@@ -27,8 +27,8 @@
 \teaser{
   \centering
   \includegraphics[width=\linewidth]{teaser}
-  \caption{WearLens. Top: guided steps and global controls (feature, normalization, VB limit, layer-flag
-  thresholds, machine legend). V1~wear curves per end mill, V2~replacement rules, V3~correlation ranking,
+  \caption{WearLens. Top: four guided steps and global controls (feature, normalization, VB limit, machine legend).
+  Rows follow the steps; V2 stays on the right as a scoreboard. V1~wear curves per end mill, V2~replacement rules, V3~correlation ranking,
   V4~feature against wear, V5~run timeline of one end mill, V6~details of one run. Enlarged panels of V2, V5 and
   V6 are in \cref{fig:s1,fig:s2}, of V1, V3 and V4 in \cref{fig:closeup}.}
   \label{fig:teaser}
@@ -186,10 +186,12 @@ confounding cannot be resolved with this data; WearLens labels it wherever machi
 \section{System Design}
 \label{sec:design}
 WearLens is a single D3.js~\cite{Bostock:2011:D3} page with six coordinated views (\cref{fig:teaser}) that follow
-overview, filter and details on demand~\cite{Shneiderman:1996:TEH}. Three guided steps set the controls for
-CH1--CH3 and show a guiding question. In V1, V2 and V4--V6 colour encodes only the machine, with three hues whose
-worst pairwise distance under simulated colour-vision deficiency is $\Delta E_{\mathrm{OK}}=9.2$ (OKLab
+overview, filter and details on demand~\cite{Shneiderman:1996:TEH}. Four guided steps (tool life, does a signal
+follow wear, can it set the alarm, is a jump really wear) set the controls for CH1--CH3, show a guiding question and
+fade the views that the step does not use. In V1, V2 and V4--V6 colour encodes only the machine, with three muted hues whose
+worst pairwise distance under simulated colour-vision deficiency is $\Delta E_{\mathrm{OK}}=8.5$ (OKLab
 $\times100$; 8 is a common target); trend lines add a line style per machine, and machines are labelled in text.
+A single accent colour marks alarms, flagged layers and selected objects; everything else is grey.
 End mills are not coloured, because nine hues cannot be told apart. V3 uses its own diverging scale. Dynamometer
 features are greyed and marked ``reference only''. Different units are stacked in panels instead of dual
 axes. The views use different horizontal axes on purpose (contact time, VB, run) and are linked by highlighting.
@@ -209,10 +211,14 @@ Aligned rows compare wear phases between machines while each panel stays selecta
 \textbf{V2 Replacement rules (T2, T6, T7).} Each end mill is a bar from zero to the time at which VB reaches the
 limit, split into the part used before replacement (saturated), unused life (light) or overrun (hatched); a dot
 plot would show only end points. Fixed times are a draggable line or, in leave-one-out mode, a tick per end mill;
-in signal mode a triangle marks the alarm. A summary reports MAE and early, late and missed end mills.
+in signal mode a triangle marks the alarm. A summary reports MAE and early, late and missed end mills. Above the bars,
+a scoreboard compares the four rules under the same test (mean absolute error, bars from zero, missed alarms counted
+separately) against a dashed baseline, the fixed time per machine with leave-one-out.
 \textbf{V3 Correlation ranking (T3).} A heatmap shows Spearman $\rho$ per feature (rows) and end mill or pooled
-(columns) on a diverging blue--grey--red scale with printed values; a matrix reveals machine-specific blocks that
-one ranked column would hide. Rows re-sort with an animated transition so the user can follow a feature.
+(columns) on a desaturated diverging blue--grey--red scale; values appear on hover. It lists the 8 machine-control
+features and 2 representative dynamometer features on a receding grey background (the other 11 remain selectable).
+A matrix reveals machine-specific blocks that one ranked column would hide. Rows are sorted by the lowest per-end-mill
+$\rho$ (or the pooled $\rho$) and re-sort with an animated transition so the user can follow a feature.
 \textbf{V4 Feature against wear (T4, T7).} A scatterplot of all runs at low opacity with a rolling median per end
 mill; a band shows the per-end-mill level at the VB limit, from which alarm levels are calibrated. Hexagonal
 binning would hide machine identity.
@@ -307,8 +313,8 @@ weakness is the alarm level, confirming Scenario~1.
 \begin{figure}[tb]
   \centering
   \includegraphics[width=\columnwidth]{scenario2_col}
-  \caption{Scenario 2. V5: E1 with trailing median (black), alarm level (dashed) and alarm (triangle) in layer 15,
-  flagged J. V6: run 443 (layer 15) against the pinned run 420 (layer 14, grey).}
+  \caption{Scenario 2. V5: E1 with trailing median (black), alarm level (dashed) and alarm (accent triangle) in layer 15,
+  flagged J (accent). V6: run 443 (layer 15) against the pinned run 420 (layer 14, grey).}
   \label{fig:s2}
 \end{figure}
 
