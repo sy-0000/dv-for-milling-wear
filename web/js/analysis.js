@@ -214,3 +214,8 @@ export function alarmStats(alarms) {
   return { mae: errs.length ? d3.mean(errs, Math.abs) : NaN, late: errs.filter((e) => e > 0).length,
            missed: alarms.filter((d) => d.reached && !d.alarm).length, n: errs.length };
 }
+
+/** Layer flag rule shared by V5 and the conclusion box: jump (local peak) ≥ jumpThr % or in-layer rise ≥ riseThr %. */
+export function isFlagged(l, jumpThr, riseThr) {
+  return (l.jumpPeak && Math.abs(l.jump) >= jumpThr) || Math.abs(l.rise) >= riseThr;
+}

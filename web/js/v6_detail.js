@@ -1,5 +1,6 @@
 // V6 · Details of the selected run: envelopes of machine signals (+ dynamometer reference), pinned comparison run,
 // and a 20 ms raw force snippet from the nearest representative run of the same tool.
+import { tr } from "./i18n.js";
 import { state, set, INK2, GRAY, BAND } from "./state.js";
 
 let ctx, root;
@@ -14,24 +15,24 @@ export function update(keys) {
 async function render() {
   root.selectAll("*").remove();
   const head = d3.select("#v6-head");
-  if (state.runIdx == null) { head.html("Click a run in V4 or V5 to see its signals."); return; }
+  if (state.runIdx == null) { head.html(tr("Click a run in V4 or V5 to see its signals.", "在 V4 或 V5 點一個 run 以查看訊號。")); return; }
   await ctx.envelopes();
   const r = ctx.runs[state.runIdx], mach = ctx.meta.machines[r.machine];
   const pin = state.pinIdx != null && state.pinIdx !== state.runIdx ? ctx.runs[state.pinIdx] : null;
-  const badges = ['<span class="badge">VB interpolated unless at a measurement</span>'];
-  if (r.machine === 2) badges.push('<span class="badge warn">M2: spindle/axis may be aliased</span>');
+  const badges = [`<span class="badge">${tr("VB interpolated unless at a measurement", "VB 除量測點外為內插")}</span>`];
+  if (r.machine === 2) badges.push(`<span class="badge warn">${tr("M2: spindle/axis may be aliased", "M2：主軸／進給訊號可能混疊")}</span>`);
   if (ctx.meta.tool_notes[r.tool]) badges.push(`<span class="badge warn">${ctx.meta.tool_notes[r.tool]}</span>`);
-  head.html(`<b>E${r.tool} · M${r.machine} · run ${r.run}</b> — layer ${r.layer}, x = ${r.x_pass} mm, C = ${r.C_min.toFixed(1)} min, `
+  head.html(`<b>E${r.tool} · M${r.machine} · run ${r.run}</b> — ${tr("layer", "層")} ${r.layer}, x = ${r.x_pass} mm, C = ${r.C_min.toFixed(1)} min, `
     + `VB = ${r.VB_um} µm ${badges.join("")} `
-    + `<button id="v6-pin" class="ghost small">${state.pinIdx === state.runIdx ? "unpin" : "pin as comparison"}</button>`
-    + (pin ? ` <span class="muted">gray = pinned run ${pin.run} (E${pin.tool}, VB ${pin.VB_um} µm)</span>` : ""));
+    + `<button id="v6-pin" class="ghost small">${state.pinIdx === state.runIdx ? tr("unpin", "取消釘選") : tr("pin as comparison", "釘選比較")}</button>`
+    + (pin ? ` <span class="muted">${tr("gray = pinned run", "灰色 = 釘選的 run")} ${pin.run} (E${pin.tool}, VB ${pin.VB_um} µm)</span>` : ""));
   d3.select("#v6-pin").on("click", () => set({ pinIdx: state.pinIdx === state.runIdx ? null : state.runIdx }));
 
   const panels = [
     { ch: 1, label: "|spindle torque| [Nm]", src: "machine" },
     { ch: 2, label: `|feed axis Y| [${mach.axis_unit}]`, src: "machine" },
   ];
-  if (state.showDyn) panels.push({ ch: 0, label: "|Fxy| RMS [N] — reference", src: "dynamometer" });
+  if (state.showDyn) panels.push({ ch: 0, label: tr("|Fxy| RMS [N] — reference", "|Fxy| RMS [N] — 參考"), src: "dynamometer" });
   const W = root.node().clientWidth, iw = W - M.l - M.r;
   const tEnd = Math.max(r.t_end, pin ? pin.t_end : 0);
   const x = d3.scaleLinear().domain([0, tEnd]).range([0, iw]);
@@ -57,7 +58,7 @@ async function render() {
     if (k === panels.length - 1) {
       g.append("g").attr("class", "axis").attr("transform", `translate(0,${ih})`).call(d3.axisBottom(x).ticks(6));
       g.append("text").attr("class", "lbl-2").attr("x", iw).attr("y", ih + 24).attr("text-anchor", "end")
-        .text("time within run [s]");
+        .text(tr("time within run [s]", "run 內時間 [s]"));
     }
   });
 
@@ -72,7 +73,7 @@ async function render() {
   const xs = d3.scaleLinear().domain([0, (v.length / s.fs) * 1000]).range([0, iw]);
   const ys = d3.scaleLinear().domain([0, d3.max(v) * 1.05]).range([sh, 0]);
   g.append("text").attr("class", "lbl-2").attr("y", -4)
-    .text(`|Fxy| [N] at 25 kHz, 20 ms of run ${s.run} (VB ${s.VB_um} µm) · peaks = cutting edges`);
+    .text(tr(`|Fxy| [N] at 25 kHz, 20 ms of run ${s.run} (VB ${s.VB_um} µm) · peaks = cutting edges`, `|Fxy| [N]，25 kHz，run ${s.run} 的 20 ms（VB ${s.VB_um} µm）· 峰值 = 刀刃`));
   g.append("g").attr("class", "axis").call(d3.axisLeft(ys).ticks(3).tickSize(3));
   g.append("g").attr("class", "axis").attr("transform", `translate(0,${sh})`).call(d3.axisBottom(xs).ticks(5).tickFormat((d) => `${d} ms`));
   g.append("path").datum(v).attr("fill", "none").attr("stroke", INK2).attr("stroke-width", 1.2)

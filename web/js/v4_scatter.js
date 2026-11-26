@@ -1,4 +1,5 @@
 // V4 · Feature (normalized) vs VB, all runs. 2-D brush selects runs; band = feature level at the VB threshold.
+import { tr } from "./i18n.js";
 import { state, set, MACHINE_DASH, ACCENT, GRAY, INK2 } from "./state.js";
 import { normLabel, median } from "./analysis.js";
 
@@ -33,9 +34,9 @@ function render() {
   g.append("text").attr("class", "lbl-2").attr("x", iw).attr("y", ih + 28).attr("text-anchor", "end").text("VB [µm]");
   g.append("text").attr("class", "lbl-2").attr("x", -M.l + 2).attr("y", -20).text(`↑ ${info.label} [${normLabel(state.norm, info.unit)}]`);
   if (state.norm === "raw" && f.startsWith("ax_")) g.append("text").attr("class", "note halo").attr("x", 6).attr("y", 12)
-    .text("raw units differ: M1 in Nm (ball screw), M2/M3 in N (linear motor) — use a normalization");
+    .text(tr("raw units differ: M1 in Nm (ball screw), M2/M3 in N (linear motor) — use a normalization", "原始單位不同：M1 為 Nm（滾珠螺桿）、M2/M3 為 N（線性馬達）——請使用正規化"));
   if (info.source === "dynamometer") g.append("text").attr("class", "note halo").attr("x", 6).attr("y", 24)
-    .text("dynamometer: reference only, not available in production");
+    .text(tr("dynamometer: reference only, not available in production", "測力計：只作參考，產線上沒有"));
 
   // band at threshold: per-tool median of y for runs with |VB - thr| <= 3
   const per = ctx.tools.map((t) => median(ctx.runs.filter((r) => r.tool === t && Math.abs(r.VB_um - state.vbThr) <= 3).map((r) => yv[r.i])))
@@ -48,7 +49,7 @@ function render() {
       .attr("fill", INK2).attr("opacity", 0.12); // neutral gray: the accent is reserved for alarms and selection (C4)
     // band label in the top margin with a swatch, so the trend lines can no longer cover it (B5)
     const bl = g.append("text").attr("x", iw).attr("text-anchor", "end").attr("y", -6).attr("font-weight", 600)
-      .text(`at VB ${state.vbThr} µm: ${ctx.fmt(lo)} – ${ctx.fmt(hi)} (${per.length} tools)`);
+      .text(tr(`at VB ${state.vbThr} µm: ${ctx.fmt(lo)} – ${ctx.fmt(hi)} (${per.length} tools)`, `VB ${state.vbThr} µm 時：${ctx.fmt(lo)} – ${ctx.fmt(hi)}（${per.length} 把刀）`));
     const bw = bl.node().getComputedTextLength();
     g.append("rect").attr("x", iw - bw - 16).attr("y", -15).attr("width", 11).attr("height", 10).attr("fill", INK2).attr("opacity", 0.25);
   }
@@ -84,7 +85,7 @@ function render() {
     if (Math.hypot(p.px - mx, p.py - my) > 12) return ctx.tip.hide();
     const r = p.r;
     ctx.tip.show(`<b>E${r.tool}</b> (M${r.machine}) · run ${r.run} · layer ${r.layer}<br>VB = ${r.VB_um} µm · C = ${r.C_min.toFixed(1)} min<br>`
-      + `${info.label}: ${ctx.fmt(r[f])} ${info.unit}${state.norm !== "raw" ? ` → ${ctx.fmt(yv[r.i])}` : ""}<br><span class="muted">click to open in V5/V6</span>`, ev);
+      + `${info.label}: ${ctx.fmt(r[f])} ${info.unit}${state.norm !== "raw" ? ` → ${ctx.fmt(yv[r.i])}` : ""}<br><span class="muted">${tr("click to open in V5/V6", "點擊在 V5/V6 開啟")}</span>`, ev);
   }).on("mouseleave.tip", () => ctx.tip.hide());
   style();
 }

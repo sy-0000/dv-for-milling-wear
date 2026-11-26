@@ -27,8 +27,9 @@
 \teaser{
   \centering
   \includegraphics[width=\linewidth]{teaser}
-  \caption{WearLens. Top: four guided steps and global controls (feature, normalization, VB limit, machine legend).
-  Rows follow the steps; V2 stays on the right as a scoreboard. V1~wear curves per end mill, V2~replacement rules, V3~correlation ranking,
+  \caption{WearLens in question Q4. Top: guided questions Q1--Q4 (plus an ``all views'' tab), global controls and a
+  language switch (Chinese/English). Centre: the main views of the question (here V5 and V6); left: the other views as
+  linked thumbnails; right: the V2 scoreboard and a conclusion written from the current analysis results. V1~wear curves per end mill, V2~replacement rules, V3~correlation ranking,
   V4~feature against wear, V5~run timeline of one end mill, V6~details of one run. Enlarged panels of V2, V5 and
   V6 are in \cref{fig:s1,fig:s2}, of V1, V3 and V4 in \cref{fig:closeup}.}
   \label{fig:teaser}
@@ -186,9 +187,11 @@ confounding cannot be resolved with this data; WearLens labels it wherever machi
 \section{System Design}
 \label{sec:design}
 WearLens is a single D3.js~\cite{Bostock:2011:D3} page with six coordinated views (\cref{fig:teaser}) that follow
-overview, filter and details on demand~\cite{Shneiderman:1996:TEH}. Four guided steps (tool life, does a signal
-follow wear, can it set the alarm, is a jump really wear) set the controls for CH1--CH3, show a guiding question and
-fade the views that the step does not use. In V1, V2 and V4--V6 colour encodes only the machine, with three muted hues whose
+overview, filter and details on demand~\cite{Shneiderman:1996:TEH}. Four guided questions Q1--Q4 (one time for all
+machines, does torque rise with wear, can a signal set the alarm, is a jump really wear) set the controls for CH1--CH3.
+Each question enlarges the views it uses; the other views stay on screen as linked thumbnails, so the overview and every
+coordinated update remain visible, and an ``all views'' tab shows all six at full size. The V2 scoreboard stays on the
+right in every question, next to a conclusion box that is written from the current results of the analysis components. In V1, V2 and V4--V6 colour encodes only the machine, with three muted hues whose
 worst pairwise distance under simulated colour-vision deficiency is $\Delta E_{\mathrm{OK}}=8.5$ (OKLab
 $\times100$; 8 is a common target); trend lines add a line style per machine, and machines are labelled in text.
 A single accent colour marks alarms, flagged layers and selected objects; everything else is grey.

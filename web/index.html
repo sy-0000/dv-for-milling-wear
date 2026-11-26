@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-Hant">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -8,114 +8,106 @@
 <script src="lib/d3.v7.9.0.min.js"></script>
 </head>
 <body>
-<header class="top">
-  <h1>WearLens</h1>
-  <p class="question">Can signals the machine already has — <b>without a dynamometer</b> — tell when to replace an end mill?
-    <button class="info" aria-expanded="false" aria-controls="about-info" aria-label="About WearLens">ⓘ</button></p>
-  <div class="info-body" id="about-info" hidden>Visual analytics of end-mill wear across three machine tools.
-    Target user: a process engineer introducing tool-condition monitoring on a machine fleet. In production only
-    <b>machine-control signals</b> are available; the dynamometer is shown as a <i>reference</i> from the trial.
-    The guided steps ①–④ follow the analysis: tool life → does a signal follow wear → can it set the alarm → is a jump really wear.</div>
+<!-- Header: brand · guided questions Q1–Q4 (+ all views) · global controls · language -->
+<header class="hdr" id="bar">
+  <div class="brand"><small class="mono">WEARLENS · TOOL WEAR</small><b data-i18n="brand">刀具磨耗判讀</b></div>
+  <nav class="tabs" aria-label="Guided questions">
+    <button class="tab" data-step="1"><small class="mono">Q1</small><b data-i18n="q1"></b></button>
+    <button class="tab" data-step="2"><small class="mono">Q2</small><b data-i18n="q2"></b></button>
+    <button class="tab" data-step="3"><small class="mono">Q3</small><b data-i18n="q3"></b></button>
+    <button class="tab" data-step="4"><small class="mono">Q4</small><b data-i18n="q4"></b></button>
+    <button class="tab tab-all" data-step="all"><small class="mono">ALL</small><b data-i18n="qall"></b></button>
+  </nav>
+  <section class="status" id="controls" aria-label="Global controls">
+    <label><span class="k mono" data-i18n="feature"></span><select id="ctl-feature"></select></label>
+    <label data-i18n-title="normTitle"><span class="k mono" data-i18n="norm"></span>
+      <select id="ctl-norm">
+        <option value="early" data-i18n="normEarly"></option>
+        <option value="vbref" data-i18n="normVbref"></option>
+        <option value="z" data-i18n="normZ"></option>
+        <option value="raw" data-i18n="normRaw"></option>
+      </select><span id="norm-badge" class="badge">production</span></label>
+    <label><span class="k mono" data-i18n="vbLimit"></span><input type="range" id="ctl-thr" min="60" max="150" step="5" value="140"><output id="out-thr">140 µm</output></label>
+    <label class="chk"><span class="k mono" data-i18n="dyn"></span><input type="checkbox" id="ctl-dyn" checked></label>
+  </section>
+  <div class="lang" role="group" aria-label="Language"><button data-lang="zh">中</button><button data-lang="en">EN</button></div>
 </header>
 
-<div id="bar" class="bar">
-  <div class="bar-row">
-    <nav class="guide" aria-label="Guided steps"><span class="seg-inline">
-      <button data-step="1">① One time for all?</button><button data-step="2">② Does torque follow wear?</button><button data-step="3">③ Can it set the alarm?</button><button data-step="4">④ Is a jump really wear?</button></span></nav>
-    <span class="spacer"></span>
-    <div class="legend" id="legend" aria-label="Machine color legend"></div>
-    <button id="ctl-reset" class="ghost">Reset</button>
-  </div>
-  <section id="controls" class="bar-row" aria-label="Global controls">
-    <label>Feature <select id="ctl-feature"></select></label>
-    <label title="early: divide by the same end mill's median in its first 3–6 min (available in production). VB 50–60 µm and z-score need microscope data or complete tool lives (trial only).">Normalization
-      <select id="ctl-norm">
-        <option value="early">× own first 3–6 min</option>
-        <option value="vbref">× own VB 50–60 µm</option>
-        <option value="z">machine z-score</option>
-        <option value="raw">raw</option>
-      </select><span id="norm-badge" class="badge">production</span></label>
-    <label>VB threshold <input type="range" id="ctl-thr" min="60" max="150" step="5" value="140"> <output id="out-thr">140 µm</output></label>
-    <label class="chk"><input type="checkbox" id="ctl-dyn" checked> Dynamometer reference</label>
-  </section>
-  <p id="guide-note" class="guide-note" hidden><span></span><button id="guide-close" aria-label="Leave the guided step">✕</button></p>
-</div>
+<!-- Question bar: the active question, what to look at, machine legend, reset -->
+<section class="qbar">
+  <span class="qnum mono" id="q-num">Q1</span>
+  <h2 id="q-title"></h2>
+  <button class="info" aria-expanded="false" aria-controls="about-info" aria-label="About">ⓘ</button>
+  <div class="info-body" id="about-info" hidden data-i18n="about"></div>
+  <p id="q-note" class="q-note"></p>
+  <div class="legend" id="legend" aria-label="Machine color legend"></div>
+  <button id="ctl-reset" class="ghost" data-i18n="reset"></button>
+</section>
 
-<!-- Layout follows the narrative: evidence views on the left (one row per question),
-     the V2 scoreboard (replacement rules) stays visible on the right for every step. -->
-<main class="grid">
-  <section class="step" id="s1" style="grid-area: s1">
-    <h2 class="step-h"><span class="num">①</span> Tool life — does one replacement time fit all machines?</h2>
-    <section class="view" id="v1"><h3>V1 · Wear curves per end mill <button class="info" aria-expanded="false" aria-controls="v1-info" aria-label="About V1">ⓘ</button></h3>
-      <p class="hint info-body" id="v1-info" hidden>VB (flank wear) vs cumulated contact time, one row per machine; dashed line = VB threshold.
-        Drag horizontally in a panel to filter a contact-time range (updates V3 and V4); click a panel to select the end mill.
-        VB is measured every 1–2 layers and interpolated in between.</p>
-      <div class="plot"></div></section>
-  </section>
-
-  <section class="step" id="s2" style="grid-area: s2">
-    <h2 class="step-h"><span class="num">②③</span> Signal — does a machine signal follow wear, and can it set the alarm level?</h2>
-    <div class="pair">
-      <section class="view" id="v3"><h3>V3 · Which signal follows wear? <button class="info" aria-expanded="false" aria-controls="v3-info" aria-label="About V3">ⓘ</button> <span class="tag">analysis</span></h3>
-        <p class="hint info-body" id="v3-info" hidden>Spearman ρ between the feature (current normalization, current time filter) and VB, per end mill and for all end mills pooled.
-          Hover a cell for ρ and n; click a row to select the feature. All 8 machine-control features are listed; of the 13 dynamometer features only 2 representatives are shown (the rest are in the Feature menu).
-          Feed axis: M1 = ball-screw motor torque [Nm], M2/M3 = linear-motor force [N], and M2 runs tool batch B, so units and batches differ across machines.
-          Within an end mill VB is mostly interpolated from contact time, so per-end-mill ρ is optimistic.</p>
-        <div class="ctl">Sort by <span id="v3-sort" class="seg-inline"><button data-sort="min" class="on">worst end mill</button><button data-sort="pooled">all pooled</button></span></div>
-        <div class="plot"></div></section>
-      <section class="view" id="v4"><h3>V4 · Feature vs wear <button class="info" aria-expanded="false" aria-controls="v4-info" aria-label="About V4">ⓘ</button></h3>
-        <p class="hint info-body" id="v4-info" hidden>Each dot = one run (feature after normalization vs VB). Lines = per-end-mill rolling median,
-          line style per machine (M1 solid · M2 dashed · M3 dotted). Gray band = range of the feature level at which the end mills reach the VB threshold:
-          this is where an alarm level would be calibrated. Drag a box to brush runs (highlighted in V1 and V5); click a dot to open the run.</p>
-        <div class="ctl"><label><input type="checkbox" id="v4-lines" checked> trend lines</label></div>
-        <div class="plot"></div></section>
+<!-- Compromise layout: the question's main views in the centre, the other views as linked thumbnails on the left,
+     the V2 scoreboard and the live conclusion on the right. Slots are moved between the columns by main.js. -->
+<main class="layout" id="layout">
+  <aside class="thumbs" id="thumbs" aria-label="Other views">
+    <div class="col-h mono" data-i18n="thumbs"></div>
+    <div id="thumb-list"></div>
+    <p class="hint" data-i18n="thumbsHint"></p>
+  </aside>
+  <div class="mainc" id="mainc"></div>
+  <aside class="score" id="score">
+    <div class="slot" id="slot-v2">
+      <section class="view" id="v2"><h3><span data-i18n="v2t"></span> <button class="info" aria-expanded="false" aria-controls="v2-info" aria-label="About V2">ⓘ</button> <span class="tag" data-i18n="analysis"></span></h3>
+        <div class="hint info-body" id="v2-info" hidden data-i18n="i2"></div>
+        <div id="v2-score"></div>
+        <div class="ctl"><span data-i18n="rule"></span> <span id="v2-mode" class="seg-inline"><button data-mode="fleet" class="on" data-i18n="mFleet"></button><button data-mode="machine" data-i18n="mMachine"></button><button data-mode="machineLoo" data-i18n="mLoo"></button><button data-mode="signal" data-i18n="mSignal"></button></span></div>
+        <p hidden id="v2-fixed-hint"></p>
+        <div class="ctl" id="v2-signal-ctl" hidden><span data-i18n="sig1"></span>
+          <input type="number" id="v2-persist" min="1" max="120" step="1" value="1" style="width:4em"> <span data-i18n="sig2"></span>
+          <label><input type="radio" name="cal" value="other" checked> <span data-i18n="calOther"></span></label>
+          <label><input type="radio" name="cal" value="loo"> <span data-i18n="calLoo"></span></label>
+          <label><input type="radio" name="cal" value="insample"> <span data-i18n="calIn"></span></label>
+          <label><input type="radio" name="cal" value="manual"> <span data-i18n="calManual"></span> <input type="number" id="v2-level" step="0.01" value="1.25" style="width:5em"></label></div>
+        <div class="plot"></div><p class="summary" id="v2-summary"></p></section>
     </div>
-  </section>
-
-  <section class="step" id="s3" style="grid-area: s3">
-    <h2 class="step-h"><span class="num">④</span> Check — is a signal change really wear?</h2>
-    <div class="pair">
-      <section class="view" id="v5"><h3>V5 · Run timeline of <select id="v5-tool"></select> <button class="info" aria-expanded="false" aria-controls="v5-info" aria-label="About V5">ⓘ</button> <span class="tag">analysis</span></h3>
-        <p class="hint info-body" id="v5-info" hidden>Feature per run of the selected end mill; faint bands and ticks mark layers (29 runs each).
-          Flags: <b>J</b> = jump vs neighbouring layers, <b>R</b> = rise within the layer (computed on the raw feature).
-          In signal-alarm mode the black line is the trailing median (15 runs), the dashed line the alarm level and ▼ the alarm.
-          Bottom strip: VB, interpolated between microscope measurements. Click a run to open it in V6.</p>
-        <div class="ctl"><label>Layer jump ≥ <input type="range" id="ctl-jump" min="2" max="30" step="1" value="5"> <output id="out-jump">5 %</output></label>
-          <label>In-layer rise ≥ <input type="range" id="ctl-rise" min="5" max="60" step="1" value="20"> <output id="out-rise">20 %</output></label></div>
-        <p class="hint"><b id="v5-count"></b></p>
-        <div class="plot"></div></section>
-      <section class="view" id="v6"><h3>V6 · Run details <button class="info" aria-expanded="false" aria-controls="v6-info" aria-label="About V6">ⓘ</button></h3>
-        <p class="hint info-body" id="v6-info" hidden>Signal envelopes of the selected run: machine signals (machine colour) and the dynamometer reference (gray).
-          Faint band = detected cut; dashed lines = window used for the features. "Pin as comparison" keeps a run in light gray for comparison.
-          Bottom: 20 ms of the raw force at 25 kHz from the nearest representative run of the same end mill (peaks = cutting edges).</p>
-        <p class="hint" id="v6-head">Click a run in V4 or V5.</p>
-        <div class="plot"></div></section>
-    </div>
-  </section>
-
-  <aside class="score" style="grid-area: score" aria-label="Scoreboard">
-    <section class="view" id="v2"><h3>V2 · Scoreboard: replacement rules <button class="info" aria-expanded="false" aria-controls="v2-info" aria-label="About V2">ⓘ</button> <span class="tag">analysis</span></h3>
-      <div class="hint info-body" id="v2-info" hidden>
-        <p><b>Scoreboard:</b> every rule under the same test — mean |replacement time − time VB reaches the threshold| over the end mills that reach it;
-          missed alarms are counted separately. Dashed line = baseline (fixed time per machine, leave-one-out). Click a rule to show it below.</p>
-        <p><b>Bars below:</b> time until VB reaches the threshold; dark = used, light = unused life, hatched = overrun / late, ▼ = alarm.
-          Drag the dashed line to change a fixed replacement time. Leave-one-out: each end mill gets the earliest life of the <i>other</i> end mills of its machine.</p>
-        <p>M2 end mills are tool batch B: machine and batch effects are confounded.</p></div>
-      <div id="v2-score"></div>
-      <div class="ctl">Rule <span id="v2-mode" class="seg-inline"><button data-mode="fleet" class="on">fixed · all</button><button data-mode="machine">fixed · per machine</button><button data-mode="machineLoo">per machine · LOO</button><button data-mode="signal">signal alarm</button></span></div>
-      <p hidden id="v2-fixed-hint"></p>
-      <div class="ctl" id="v2-signal-ctl" hidden>Alarm when the trailing median (15 runs) of the <b>selected feature</b> stays ≥ level for
-        <input type="number" id="v2-persist" min="1" max="120" step="1" value="1" style="width:4em"> runs. Level:
-        <label><input type="radio" name="cal" value="other" checked> calibrated on the other machines</label>
-        <label><input type="radio" name="cal" value="loo"> same machine, other end mills <i>(leave-one-out)</i></label>
-        <label><input type="radio" name="cal" value="insample"> same machine incl. itself <i>(in-sample)</i></label>
-        <label><input type="radio" name="cal" value="manual"> manual <input type="number" id="v2-level" step="0.01" value="1.25" style="width:5em"></label></div>
-      <div class="plot"></div><p class="summary" id="v2-summary"></p></section>
+    <div class="concl" id="concl"><small class="mono"><span data-i18n="conclLabel"></span> · <span id="concl-q"></span></small><b id="concl-title"></b><p id="concl-body"></p></div>
   </aside>
 </main>
 
+<!-- view slots (moved into the centre or the thumbnail column) -->
+<div id="pool">
+  <div class="slot" id="slot-v1" data-view="v1"><div class="slot-h mono"><span>V1 · <span data-i18n="v1s"></span></span><span class="open" data-i18n="open"></span></div>
+    <section class="view" id="v1"><h3><span data-i18n="v1t"></span> <button class="info" aria-expanded="false" aria-controls="v1-info" aria-label="About V1">ⓘ</button></h3>
+      <p class="hint info-body" id="v1-info" hidden data-i18n="i1"></p>
+      <div class="plot"></div></section></div>
+
+  <div class="slot" id="slot-v3" data-view="v3"><div class="slot-h mono"><span>V3 · <span data-i18n="v3s"></span></span><span class="open" data-i18n="open"></span></div>
+    <section class="view" id="v3"><h3><span data-i18n="v3t"></span> <button class="info" aria-expanded="false" aria-controls="v3-info" aria-label="About V3">ⓘ</button> <span class="tag" data-i18n="analysis"></span></h3>
+      <p class="hint info-body" id="v3-info" hidden data-i18n="i3"></p>
+      <div class="ctl"><span data-i18n="sortBy"></span> <span id="v3-sort" class="seg-inline"><button data-sort="min" class="on" data-i18n="sortMin"></button><button data-sort="pooled" data-i18n="sortPooled"></button></span></div>
+      <div class="plot"></div></section></div>
+
+  <div class="slot" id="slot-v4" data-view="v4"><div class="slot-h mono"><span>V4 · <span data-i18n="v4s"></span></span><span class="open" data-i18n="open"></span></div>
+    <section class="view" id="v4"><h3><span data-i18n="v4t"></span> <button class="info" aria-expanded="false" aria-controls="v4-info" aria-label="About V4">ⓘ</button></h3>
+      <p class="hint info-body" id="v4-info" hidden data-i18n="i4"></p>
+      <div class="ctl"><label><input type="checkbox" id="v4-lines" checked> <span data-i18n="trend"></span></label></div>
+      <div class="plot"></div></section></div>
+
+  <div class="slot" id="slot-v5" data-view="v5"><div class="slot-h mono"><span>V5 · <span data-i18n="v5s"></span></span><span class="open" data-i18n="open"></span></div>
+    <section class="view" id="v5"><h3><span data-i18n="v5t"></span> <select id="v5-tool"></select> <button class="info" aria-expanded="false" aria-controls="v5-info" aria-label="About V5">ⓘ</button> <span class="tag" data-i18n="analysis"></span></h3>
+      <p class="hint info-body" id="v5-info" hidden data-i18n="i5"></p>
+      <div class="ctl"><label><span data-i18n="jump"></span> <input type="range" id="ctl-jump" min="2" max="30" step="1" value="5"> <output id="out-jump">5 %</output></label>
+        <label><span data-i18n="rise"></span> <input type="range" id="ctl-rise" min="5" max="60" step="1" value="20"> <output id="out-rise">20 %</output></label>
+        <b id="v5-count"></b></div>
+      <div class="plot"></div></section></div>
+
+  <div class="slot" id="slot-v6" data-view="v6"><div class="slot-h mono"><span>V6 · <span data-i18n="v6s"></span></span><span class="open" data-i18n="open"></span></div>
+    <section class="view" id="v6"><h3><span data-i18n="v6t"></span> <button class="info" aria-expanded="false" aria-controls="v6-info" aria-label="About V6">ⓘ</button></h3>
+      <p class="hint info-body" id="v6-info" hidden data-i18n="i6"></p>
+      <p class="hint" id="v6-head"></p>
+      <div class="plot"></div></section></div>
+</div>
+
 <footer class="foot">
-  <details><summary>Data limitations &amp; source</summary>
+  <details><summary data-i18n="limits"></summary>
     <p id="limitations"></p>
     <p>Data: Denkena, Klemme &amp; Stiehl (2023), <i>Data in Brief</i> 50:109574 · Mendeley Data doi:10.17632/zpxs87bjt8 (CC BY 4.0). Built with D3.js v7.9.0.</p>
   </details>

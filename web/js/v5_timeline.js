@@ -1,6 +1,7 @@
 // V5 · Run timeline of the selected tool: feature per run, layer bands, layer-level flags (jump / rise), VB strip.
+import { tr } from "./i18n.js";
 import { state, set, ACCENT, INK, INK2, GRAY, BAND } from "./state.js";
-import { normLabel } from "./analysis.js";
+import { normLabel, isFlagged } from "./analysis.js";
 
 let ctx, root;
 const M = { t: 40, r: 10, b: 30, l: 48 }, H = 290, VBH = 46, GAP = 20; // GAP between feature plot and VB strip
@@ -30,12 +31,12 @@ function render() {
   const y = d3.scaleLinear().domain(d3.extent(rs, (r) => yv[r.i])).nice().range([ih, 0]);
   const yb = d3.scaleLinear().domain([0, 165]).range([VBH, 0]);
   const svg = root.append("svg").attr("width", W).attr("height", H).attr("role", "img")
-    .attr("aria-label", `Run timeline of tool ${state.tool}`);
+    .attr("aria-label", tr(`Run timeline of end mill ${state.tool}`, `刀具 E${state.tool} 的 run 時序`));
   const g = svg.append("g").attr("transform", `translate(${M.l},${M.t})`);
   const layers = ctx.layers.filter((l) => l.tool === state.tool);
-  const isFlag = (l) => (l.jumpPeak && Math.abs(l.jump) >= state.jumpThr) || Math.abs(l.rise) >= state.riseThr;
-  d3.select("#v5-count").text(`Flagged layers at these thresholds: ${ctx.layers.filter(isFlag).length} of ${ctx.layers.length} (all end mills), `
-    + `${layers.filter(isFlag).length} in E${state.tool}.`);
+  const isFlag = (l) => isFlagged(l, state.jumpThr, state.riseThr);
+  d3.select("#v5-count").text(tr(`Flagged layers: ${ctx.layers.filter(isFlag).length} of ${ctx.layers.length} (all end mills), `
+    + `${layers.filter(isFlag).length} in E${state.tool}.`, `被標記的層：${ctx.layers.length} 層中 ${ctx.layers.filter(isFlag).length} 層（全部刀），E${state.tool} 有 ${layers.filter(isFlag).length} 層。`));
   const runOf = (i) => ctx.runs[i].run;
 
   // layer bands + flags
@@ -54,9 +55,9 @@ function render() {
         .text(flags.join(""));
     }
     g.append("rect").attr("x", x0).attr("width", x1 - x0).attr("y", -18).attr("height", ih + 18 + GAP + VBH).attr("fill", "transparent")
-      .on("mousemove", (ev) => ctx.tip.show(`<b>layer ${l.layer}</b> (runs ${runOf(l.i0)}–${runOf(l.i1)})<br>`
-        + `median ${info.label}: ${ctx.fmt(l.median)} ${info.unit}<br>jump vs neighbours: ${Number.isFinite(l.jump) ? l.jump.toFixed(1) : "–"} %<br>`
-        + `rise within layer: ${Number.isFinite(l.rise) ? l.rise.toFixed(1) : "–"} %<br><span class="muted">computed on the raw feature</span>`, ev))
+      .on("mousemove", (ev) => ctx.tip.show(`<b>${tr("layer", "第")} ${l.layer}${tr("", " 層")}</b> (runs ${runOf(l.i0)}–${runOf(l.i1)})<br>`
+        + `${tr("median", "中位數")} ${info.label}: ${ctx.fmt(l.median)} ${info.unit}<br>${tr("jump vs neighbours", "和相鄰層比的跳升")}: ${Number.isFinite(l.jump) ? l.jump.toFixed(1) : "–"} %<br>`
+        + `${tr("rise within layer", "層內上升")}: ${Number.isFinite(l.rise) ? l.rise.toFixed(1) : "–"} %<br><span class="muted">${tr("computed on the raw feature", "用原始特徵計算")}</span>`, ev))
       .on("mouseleave", () => ctx.tip.hide());
   });
   g.append("g").attr("class", "axis").call(d3.axisLeft(y).ticks(5));
@@ -69,7 +70,7 @@ function render() {
   g.append("g").selectAll("circle").data(rs).join("circle").attr("cx", (r) => x(r.run)).attr("cy", (r) => y(yv[r.i]))
     .attr("r", (r) => (state.brushed?.has(r.i) ? 3 : 2)).attr("fill", (r) => (state.brushed?.has(r.i) ? ACCENT : c))
     .attr("opacity", (r) => (ctx.inRange(r) ? 1 : 0.2)).style("cursor", "pointer")
-    .on("mousemove", (ev, r) => ctx.tip.show(`<b>run ${r.run}</b> · layer ${r.layer} · x = ${r.x_pass} mm<br>`
+    .on("mousemove", (ev, r) => ctx.tip.show(`<b>run ${r.run}</b> · ${tr("layer", "層")} ${r.layer} · x = ${r.x_pass} mm<br>`
       + `C = ${r.C_min.toFixed(1)} min · VB = ${r.VB_um} µm<br>${info.label}: ${ctx.fmt(r[f])} ${info.unit}`, ev))
     .on("mouseleave", () => ctx.tip.hide())
     .on("click", (ev, r) => set({ runIdx: r.i }));
@@ -81,7 +82,7 @@ function render() {
     .attr("d", d3.line().x((r) => x(r.run)).y((r) => yb(r.VB_um)));
   gb.append("line").attr("x1", 0).attr("x2", iw).attr("y1", yb(state.vbThr)).attr("y2", yb(state.vbThr))
     .attr("stroke", GRAY).attr("stroke-dasharray", "3 3");
-  gb.append("text").attr("class", "lbl-2").attr("x", 0).attr("y", -5).text("↑ VB [µm] (interpolated between measurements)");
+  gb.append("text").attr("class", "lbl-2").attr("x", 0).attr("y", -5).text(tr("↑ VB [µm] (interpolated between measurements)", "↑ VB [µm]（量測之間為內插）"));
   gb.append("g").attr("class", "axis").attr("transform", `translate(0,${VBH})`).call(d3.axisBottom(x).ticks(8));
   gb.append("text").attr("class", "lbl-2").attr("x", iw).attr("y", VBH + 26).attr("text-anchor", "end").text("run");
 
@@ -100,14 +101,14 @@ function render() {
       g.append("line").attr("x1", 0).attr("x2", iw).attr("y1", y(a.level)).attr("y2", y(a.level))
         .attr("stroke", INK2).attr("stroke-dasharray", "6 3").attr("pointer-events", "none");
       g.append("text").attr("class", "halo").attr("x", iw - 4).attr("y", y(a.level) - 4).attr("text-anchor", "end")
-        .text(`alarm level ${ctx.fmt(a.level)}`);
+        .text(tr(`alarm level ${ctx.fmt(a.level)}`, `警示線 ${ctx.fmt(a.level)}`));
     }
     if (a.alarm) {
       g.append("path").attr("d", d3.symbol(d3.symbolTriangle, 50)()).attr("transform", `translate(${x(a.alarm.run)},${y(ctx.trail[a.alarm.i]) - 10}) rotate(180)`)
         .attr("fill", ACCENT).attr("pointer-events", "none");
       const right = x(a.alarm.run) < iw * 0.6;
       g.append("text").attr("class", "halo").attr("x", x(a.alarm.run) + (right ? 8 : -8)).attr("y", y(ctx.trail[a.alarm.i]) + 4)
-        .attr("text-anchor", right ? "start" : "end").attr("font-weight", 600).text(`▼ alarm: run ${a.alarm.run}, VB ${a.alarm.VB_um} µm`);
+        .attr("text-anchor", right ? "start" : "end").attr("font-weight", 600).text(tr(`▼ alarm: run ${a.alarm.run}, VB ${a.alarm.VB_um} µm`, `▼ 警示：run ${a.alarm.run}，VB ${a.alarm.VB_um} µm`));
     }
   }
   if (state.pinIdx != null && ctx.runs[state.pinIdx].tool === state.tool) {

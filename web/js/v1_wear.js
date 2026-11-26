@@ -1,8 +1,9 @@
 // V1 · Wear curves as 3×3 small multiples (rows = machines). Brush x to filter a contact-time range.
+import { tr } from "./i18n.js";
 import { state, set, ACCENT, GRAY, BAND } from "./state.js";
 
 let ctx, root, cells = [], x, y;
-const H = 104, M = { t: 16, r: 8, b: 18, l: 30 };
+let H = 104; const M = { t: 16, r: 8, b: 18, l: 30 };
 
 export function init(c) { ctx = c; root = d3.select("#v1 .plot"); render(); }
 
@@ -16,11 +17,12 @@ function render() {
   root.selectAll("*").remove();
   cells = [];
   const W = root.node().clientWidth, cw = W / 3;
+  H = Math.round(Math.max(104, Math.min(170, cw * 0.6))); // taller panels when V1 is the main view
   const iw = cw - M.l - M.r, ih = H - M.t - M.b;
   x = d3.scaleLinear().domain([0, 90]).range([0, iw]);
   y = d3.scaleLinear().domain([0, 165]).range([ih, 0]);
   const svg = root.append("svg").attr("width", W).attr("height", H * 3 + 14)
-    .attr("role", "img").attr("aria-label", "Wear curves of end mills E1 to E9");
+    .attr("role", "img").attr("aria-label", tr("Wear curves of end mills E1 to E9", "E1 到 E9 的磨耗曲線"));
   ctx.tools.forEach((t, k) => {
     const rs = ctx.runs.filter((r) => r.tool === t), m = rs[0].machine;
     const g = svg.append("g").attr("transform", `translate(${(k % 3) * cw + M.l},${Math.floor(k / 3) * H + M.t})`);
@@ -36,11 +38,11 @@ function render() {
     const title = g.append("text").attr("class", "ttl").attr("x", 4).attr("y", -4).attr("font-weight", 600).style("cursor", "pointer")
       .text(`E${t} · M${m}`);
     const note = ctx.meta.tool_notes[t];
-    if (t === 8) g.append("text").attr("class", "note halo").attr("x", iw - 2).attr("text-anchor", "end").attr("y", ih - 4).text("no data before C = 3 min");
+    if (t === 8) g.append("text").attr("class", "note halo").attr("x", iw - 2).attr("text-anchor", "end").attr("y", ih - 4).text(tr("no data before C = 3 min", "C = 3 min 之前無資料"));
     if (note) title.append("title").text(note);
     if (k === 0) g.append("text").attr("class", "lbl-2").attr("x", iw).attr("y", -4).attr("text-anchor", "end").text("VB [µm]");
     if (k === 8) g.append("text").attr("class", "lbl-2").attr("x", iw).attr("y", ih + 30).attr("text-anchor", "end")
-      .text("contact time C [min]");
+      .text(tr("contact time C [min]", "累計切削時間 C [min]"));
     // brush + hover
     const brush = d3.brushX().extent([[0, 0], [iw, ih]])
       .on("end", (ev) => {
@@ -54,7 +56,7 @@ function render() {
         const cx = x.invert(d3.pointer(ev)[0]);
         const r = rs[d3.bisector((d) => d.C_min).center(rs, cx)];
         ctx.tip.show(`<b>E${t}</b> (M${m}) · run ${r.run}<br>C = ${r.C_min.toFixed(1)} min · VB = ${r.VB_um} µm<br>`
-          + `<span class="muted">layer ${r.layer}; VB mostly interpolated between microscope measurements</span>`, ev);
+          + `<span class="muted">${tr(`layer ${r.layer}; VB mostly interpolated between microscope measurements`, `第 ${r.layer} 層；VB 多為顯微鏡量測之間的內插`)}</span>`, ev);
       })
       .on("mouseleave.tip", () => ctx.tip.hide());
     title.on("click", () => set({ tool: t }));

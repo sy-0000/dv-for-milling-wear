@@ -12,7 +12,7 @@ const out = process.argv[2] || ".";
   const p = await b.newPage({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 });
   const errs = [];
   p.on("pageerror", (e) => errs.push(e.message));
-  await p.goto("http://localhost:8765/index.html");
+  await p.goto("http://localhost:8765/index.html?lang=en"); // English UI: the checks compare English labels
   await p.waitForTimeout(2500);
   const res = [];
   const check = (name, got, want) => res.push({ name, got, want, ok: String(got) === String(want) });

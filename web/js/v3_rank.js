@@ -1,6 +1,7 @@
 // V3 · Spearman ρ(feature, VB) per tool and pooled; recomputed for normalization, time filter and source toggle.
 // Shows all 8 machine-control features (production) and 2 representative dynamometer features (reference only);
 // the other dynamometer features stay available in the global Feature menu.
+import { tr } from "./i18n.js";
 import { state, set, ACCENT, INK, INK2, GRAY } from "./state.js";
 import { normalize, spearman } from "./analysis.js";
 
@@ -11,8 +12,10 @@ const M = { t: 22, r: 8, b: 44, l: 0 }, ROWH = 17, GROUPH = 22;
 // desaturated diverging scale: muted blue – neutral gray – muted brick, midpoint ρ = 0 (C1); ends are not full-saturation
 const color = d3.scaleDiverging().domain([-1, 0, 1]).clamp(true)
   .interpolator(d3.piecewise(d3.interpolateLab, ["#4d6f99", "#eceae6", "#a85a45"]));
-const GROUP_LABEL = { machine: "Machine control — production-ready", dynamometer: "Dynamometer — reference only (not in production)" };
-const AXIS_NOTE = "Feed axis: M1 = ball-screw motor torque [Nm], M2/M3 = linear-motor force [N]; M2 is also tool batch B.";
+const GROUP_LABEL = () => ({ machine: tr("Machine control — production-ready", "機台控制 — 產線可用"),
+  dynamometer: tr("Dynamometer — reference only (not in production)", "測力計 — 只作參考（產線沒有）") });
+const AXIS_NOTE = () => tr("Feed axis: M1 = ball-screw motor torque [Nm], M2/M3 = linear-motor force [N]; M2 is also tool batch B.",
+  "進給軸：M1 = 滾珠螺桿馬達扭矩 [Nm]，M2/M3 = 線性馬達出力 [N]；M2 也是刀具批次 B。");
 
 export function init(c) {
   ctx = c;
@@ -107,7 +110,7 @@ function render(rebuild) {
   gt.select("line").attr("x1", -M.l).attr("x2", iw).attr("y1", 0).attr("y2", 0)
     .attr("stroke", (d, k) => (k ? "#d6d5d0" : "none"));
   gt.select("text").attr("x", -M.l + 2).attr("y", GROUPH - 7).attr("font-weight", 600)
-    .style("fill", (d) => (d.src === "machine" ? INK : GRAY)).text((d) => GROUP_LABEL[d.src]);
+    .style("fill", (d) => (d.src === "machine" ? INK : GRAY)).text((d) => GROUP_LABEL()[d.src]);
 
   const t = svg.transition().duration(600);
   const rowSel = g.select(".rows").selectAll("g.row").data(order, (r) => r.f).join(
@@ -127,11 +130,11 @@ function render(rebuild) {
     .attr("stroke", "none")
     // values on demand only: no numbers in the cells, the tooltip gives ρ and n
     .on("mouseenter", function () { d3.select(this).attr("stroke", INK).attr("stroke-width", 1.2); })
-    .on("mousemove", (ev, c) => ctx.tip.show(`<b>${ctx.meta.features[c.f].label}</b><br>${c.col === "All" ? "all end mills pooled" : c.col}: `
-      + `ρ = ${Number.isFinite(c.rho) ? c.rho.toFixed(2) : "n/a (too few runs)"} (n = ${c.n})<br>`
-      + (c.f.startsWith("ax_") ? `<span class="muted">${AXIS_NOTE}</span><br>` : "")
-      + `<span class="muted">normalization: ${state.norm}${state.cRange ? `; C ${state.cRange[0].toFixed(0)}–${state.cRange[1].toFixed(0)} min` : ""}. `
-      + `Within an end mill VB is mostly interpolated from C, so per-end-mill ρ is optimistic.</span>`, ev))
+    .on("mousemove", (ev, c) => ctx.tip.show(`<b>${ctx.meta.features[c.f].label}</b><br>${c.col === "All" ? tr("all end mills pooled", "全部刀合併") : c.col}: `
+      + `ρ = ${Number.isFinite(c.rho) ? c.rho.toFixed(2) : tr("n/a (too few runs)", "無（run 太少）")} (n = ${c.n})<br>`
+      + (c.f.startsWith("ax_") ? `<span class="muted">${AXIS_NOTE()}</span><br>` : "")
+      + `<span class="muted">${tr("normalization", "正規化")}: ${state.norm}${state.cRange ? `; C ${state.cRange[0].toFixed(0)}–${state.cRange[1].toFixed(0)} min` : ""}. `
+      + `${tr("Within an end mill VB is mostly interpolated from C, so per-end-mill ρ is optimistic.", "單把刀內 VB 多為依 C 內插，單刀 ρ 偏樂觀。")}</span>`, ev))
     .on("mouseleave", function () { d3.select(this).attr("stroke", "none"); ctx.tip.hide(); });
 
   // colour legend (shares the drawing scale)
@@ -147,7 +150,7 @@ function render(rebuild) {
     .call(d3.axisBottom(d3.scaleLinear().domain([-1, 1]).range([0, lw])).ticks(5).tickSize(3));
   lg.append("text").attr("x", -6).attr("y", 7).attr("text-anchor", "end").attr("class", "lbl-2").text("Spearman ρ");
   lg.append("text").attr("x", lw).attr("y", 32).attr("text-anchor", "end").attr("class", "note")
-    .text(state.showDyn ? "11 more dynamometer features: Feature menu" : "");
+    .text(state.showDyn ? tr("11 more dynamometer features: Feature menu", "其餘 11 個測力計特徵：見特徵選單") : "");
   mark();
 }
 

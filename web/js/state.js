@@ -8,6 +8,7 @@ export const INK = "#1d1d1b", INK2 = "#5c5b57", GRAY = "#8f8e89", BAND = "#f5f4f
 export const MACHINE_DASH = { 1: null, 2: "7 3", 3: "2 2" };
 
 export const state = {
+  lang: "zh",             // zh | en (UI language; set from ?lang= / last choice in main.js)
   feature: "Tsp_mean",
   norm: "early",          // early (production) | vbref | z | raw
   showDyn: true,          // show dynamometer reference rows / panels
