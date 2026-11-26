@@ -1,3 +1,5 @@
+> ⚠ 已由 `10_demo_script_final.md` 取代(Q1–Q4 介面、逐步操作與評分對照)。
+
 # Demo 講稿 v2(以「不用測力計能做到什麼」為主線)
 
 > 取代 `08_demo_script.md` 的敘事順序;數字沿用 `data/verify_expected.json`(與 08 相同)。
