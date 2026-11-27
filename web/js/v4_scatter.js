@@ -1,9 +1,10 @@
 // V4 · Feature (normalized) vs VB, all runs. 2-D brush selects runs; band = feature level at the VB threshold.
-import { state, set, MACHINE_DASH } from "./state.js";
+import { tr } from "./i18n.js";
+import { state, set, MACHINE_DASH, ACCENT, GRAY, INK2 } from "./state.js";
 import { normLabel, median } from "./analysis.js";
 
 let ctx, root, x, y, g, dots, delaunay, pts;
-const M = { t: 16, r: 12, b: 34, l: 40 }, H = 300;
+const M = { t: 34, r: 12, b: 34, l: 40 }, H = 330;
 
 export function init(c) {
   ctx = c;
@@ -31,23 +32,26 @@ function render() {
   g.append("g").attr("class", "axis").call(d3.axisLeft(y).ticks(5));
   g.append("g").attr("class", "axis").attr("transform", `translate(0,${ih})`).call(d3.axisBottom(x).ticks(8));
   g.append("text").attr("class", "lbl-2").attr("x", iw).attr("y", ih + 28).attr("text-anchor", "end").text("VB [µm]");
-  g.append("text").attr("class", "lbl-2 halo").attr("x", 6).attr("y", -1).text(`↑ ${info.label} [${normLabel(state.norm, info.unit)}]`);
+  g.append("text").attr("class", "lbl-2").attr("x", -M.l + 2).attr("y", -20).text(`↑ ${info.label} [${normLabel(state.norm, info.unit)}]`);
   if (state.norm === "raw" && f.startsWith("ax_")) g.append("text").attr("class", "note halo").attr("x", 6).attr("y", 12)
-    .text("raw units differ: M1 in Nm (ball screw), M2/M3 in N (linear motor) — use a normalization");
+    .text(tr("raw units differ: M1 in Nm (ball screw), M2/M3 in N (linear motor) — use a normalization", "原始單位不同：M1 為 Nm（滾珠螺桿）、M2/M3 為 N（線性馬達）——請使用正規化"));
   if (info.source === "dynamometer") g.append("text").attr("class", "note halo").attr("x", 6).attr("y", 24)
-    .text("dynamometer: reference only, not available in production");
+    .text(tr("dynamometer: reference only, not available in production", "測力計：只作參考，產線上沒有"));
 
   // band at threshold: per-tool median of y for runs with |VB - thr| <= 3
   const per = ctx.tools.map((t) => median(ctx.runs.filter((r) => r.tool === t && Math.abs(r.VB_um - state.vbThr) <= 3).map((r) => yv[r.i])))
     .filter(Number.isFinite);
   g.append("line").attr("x1", x(state.vbThr)).attr("x2", x(state.vbThr)).attr("y1", 0).attr("y2", ih)
-    .attr("stroke", "#0b0b0b").attr("stroke-dasharray", "3 3");
+    .attr("stroke", GRAY).attr("stroke-dasharray", "3 3");
   if (per.length) {
     const [lo, hi] = d3.extent(per);
     g.append("rect").attr("x", 0).attr("width", iw).attr("y", y(hi)).attr("height", Math.max(1, y(lo) - y(hi)))
-      .attr("fill", "#6250d6").attr("opacity", 0.12);
-    g.append("text").attr("class", "halo").attr("x", iw - 4).attr("text-anchor", "end").attr("y", y(hi) - 4).attr("font-weight", 600)
-      .text(`at VB ${state.vbThr} µm: ${ctx.fmt(lo)} – ${ctx.fmt(hi)} (${per.length} tools)`);
+      .attr("fill", INK2).attr("opacity", 0.12); // neutral gray: the accent is reserved for alarms and selection (C4)
+    // band label in the top margin with a swatch, so the trend lines can no longer cover it (B5)
+    const bl = g.append("text").attr("x", iw).attr("text-anchor", "end").attr("y", -6).attr("font-weight", 600)
+      .text(tr(`at VB ${state.vbThr} µm: ${ctx.fmt(lo)} – ${ctx.fmt(hi)} (${per.length} tools)`, `VB ${state.vbThr} µm 時：${ctx.fmt(lo)} – ${ctx.fmt(hi)}（${per.length} 把刀）`));
+    const bw = bl.node().getComputedTextLength();
+    g.append("rect").attr("x", iw - bw - 16).attr("y", -15).attr("width", 11).attr("height", 10).attr("fill", INK2).attr("opacity", 0.25);
   }
 
   pts = ctx.runs.map((r) => ({ r, px: x(r.VB_um), py: y(yv[r.i]) })).filter((p) => Number.isFinite(p.py));
@@ -81,7 +85,7 @@ function render() {
     if (Math.hypot(p.px - mx, p.py - my) > 12) return ctx.tip.hide();
     const r = p.r;
     ctx.tip.show(`<b>E${r.tool}</b> (M${r.machine}) · run ${r.run} · layer ${r.layer}<br>VB = ${r.VB_um} µm · C = ${r.C_min.toFixed(1)} min<br>`
-      + `${info.label}: ${ctx.fmt(r[f])} ${info.unit}${state.norm !== "raw" ? ` → ${ctx.fmt(yv[r.i])}` : ""}<br><span class="muted">click to open in V5/V6</span>`, ev);
+      + `${info.label}: ${ctx.fmt(r[f])} ${info.unit}${state.norm !== "raw" ? ` → ${ctx.fmt(yv[r.i])}` : ""}<br><span class="muted">${tr("click to open in V5/V6", "點擊在 V5/V6 開啟")}</span>`, ev);
   }).on("mouseleave.tip", () => ctx.tip.hide());
   style();
 }
@@ -101,5 +105,5 @@ function style() {
   }).attr("r", (p) => (p.r.tool === state.tool ? 2.4 : 1.8));
   const sel = state.runIdx != null ? pts.filter((p) => p.r.i === state.runIdx) : [];
   g.select(".selmark").selectAll("circle").data(sel).join("circle").attr("cx", (p) => p.px).attr("cy", (p) => p.py)
-    .attr("r", 5).attr("fill", "none").attr("stroke", "#0b0b0b").attr("stroke-width", 1.8);
+    .attr("r", 5).attr("fill", "none").attr("stroke", ACCENT).attr("stroke-width", 1.8);
 }

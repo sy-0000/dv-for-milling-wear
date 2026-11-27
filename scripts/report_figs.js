@@ -8,7 +8,8 @@ const out = path.join(__dirname, "..", "report", "figs");
 (async () => {
   const b = await chromium.launch();
   const p = await b.newPage({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2 });
-  await p.goto("http://localhost:8765/index.html");
+  // close-ups and scenario panels: the "All views" layout, English UI
+  await p.goto("http://localhost:8765/index.html?lang=en&step=all");
   await p.waitForTimeout(2500);
   const clickRun = async (run) => {
     // circles are <1 px apart, so a mouse click hits a neighbour: dispatch the click on the exact element instead
@@ -18,11 +19,17 @@ const out = path.join(__dirname, "..", "report", "figs");
   };
   const shot = async (sel, name) => { await p.mouse.move(5, 5); await (await p.$(sel)).screenshot({ path: path.join(out, name) }); };
 
-  // Fig. 2: whole interface, E1 selected, a run of layer 15 open in V6
   await clickRun(443);
-  await p.mouse.move(5, 5);
-  await p.screenshot({ path: path.join(out, "interface.png"), fullPage: true });
   for (const v of ["v1", "v3", "v4"]) await shot(`#${v}`, `raw_${v}.png`);
+  // Fig. 2: whole interface in question Q4 (main views V5 + V6, other views as thumbnails), run 443 open
+  const q = await b.newPage({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2 });
+  await q.goto("http://localhost:8765/index.html?lang=en&step=4");
+  await q.waitForTimeout(2500);
+  await q.$$eval("#v5 circle", (cs) => cs.find((c) => c.__data__ && c.__data__.run === 443)
+    .dispatchEvent(new MouseEvent("click", { bubbles: true })));
+  await q.waitForTimeout(1000);
+  await q.mouse.move(5, 5);
+  await q.screenshot({ path: path.join(out, "interface.png"), fullPage: true });
 
   // Scenario 1: the same leave-one-end-mill-out test for a fixed time per machine and for the signal alarm
   await p.click('#v2-mode button[data-mode="machineLoo"]');
@@ -44,13 +51,13 @@ const out = path.join(__dirname, "..", "report", "figs");
   await shot("#v6 .plot svg", "raw_s2_v6.png");
   // Teaser for the VGTC template: wider viewport, interface without the footer
   const t = await b.newPage({ viewport: { width: 1760, height: 900 }, deviceScaleFactor: 2 });
-  await t.goto("http://localhost:8765/index.html");
+  await t.goto("http://localhost:8765/index.html?lang=en&step=4");
   await t.waitForTimeout(2500);
   await t.$$eval("#v5 circle", (cs) => cs.find((c) => c.__data__ && c.__data__.run === 443)
     .dispatchEvent(new MouseEvent("click", { bubbles: true })));
   await t.waitForTimeout(1000);
   await t.mouse.move(5, 5);
-  const bb = await (await t.$("main.grid")).boundingBox();
+  const bb = await (await t.$("#layout")).boundingBox();
   await t.screenshot({ path: path.join(out, "teaser.png"), fullPage: true, clip: { x: 0, y: 0, width: 1760, height: bb.y + bb.height + 6 } });
   await b.close();
   console.log("ok");

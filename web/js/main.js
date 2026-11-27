@@ -1,5 +1,7 @@
 import { state, set, on, MACHINE_COLOR } from "./state.js";
 import { normalize, rollingByTool, trailingByTool, layerDiagnostics, signalAlarms } from "./analysis.js";
+import { tr, STATIC, applyStatic, initialLang, rememberLang } from "./i18n.js";
+import { conclusion } from "./concl.js";
 import * as V1 from "./v1_wear.js";
 import * as V2 from "./v2_life.js";
 import * as V3 from "./v3_rank.js";
@@ -8,6 +10,7 @@ import * as V5 from "./v5_timeline.js";
 import * as V6 from "./v6_detail.js";
 
 const VIEWS = [V1, V2, V3, V4, V5, V6];
+state.lang = initialLang(); // before the first render (no publish needed)
 
 // ---------- tooltip ----------
 const tipEl = document.getElementById("tooltip");
@@ -74,7 +77,7 @@ function derive(keys) {
 const fSel = document.getElementById("ctl-feature");
 function fillFeatureSelect() {
   fSel.innerHTML = "";
-  for (const [grp, src] of [["Machine control (production)", "machine"], ["Dynamometer (reference)", "dynamometer"]]) {
+  for (const [grp, src] of [[tr("Machine control (production)", "機台控制（產線可用）"), "machine"], [tr("Dynamometer (reference)", "測力計（參考）"), "dynamometer"]]) {
     if (src === "dynamometer" && !state.showDyn) continue;
     const og = document.createElement("optgroup");
     og.label = grp;
@@ -88,9 +91,9 @@ function fillFeatureSelect() {
   }
   fSel.value = state.feature;
 }
-fillFeatureSelect();
 fSel.onchange = () => set({ feature: fSel.value });
-document.querySelectorAll("input[name=norm]").forEach((el) => (el.onchange = () => set({ norm: el.value })));
+const nSel = document.getElementById("ctl-norm");
+nSel.onchange = () => set({ norm: nSel.value });
 document.getElementById("ctl-dyn").onchange = (e) => {
   const patch = { showDyn: e.target.checked };
   if (!e.target.checked && meta.features[state.feature].source === "dynamometer") patch.feature = "Tsp_mean";
@@ -106,14 +109,19 @@ bindRange("ctl-rise", "out-rise", "riseThr", "%");
 document.getElementById("ctl-reset").onclick = () =>
   set({ cRange: null, brushed: null, runIdx: null, pinIdx: null, fix: { mode: state.fix.mode, fleet: null, m: { 1: null, 2: null, 3: null } } });
 
-d3.select("#legend").selectAll("span").data(Object.entries(meta.machines)).join("span")
-  .html(([m, d]) => `<i style="background:${MACHINE_COLOR[m]}"></i>M${m} ${d.name.replace("DMG Mori ", "")} (E${d.tools[0]}–E${d.tools[2]})`)
-  .attr("title", ([, d]) => `${d.name}, ${d.control}, ${d.drive}, tool batch ${d.batch}${d.note ? " — " + d.note : ""}`);
-document.getElementById("limitations").innerHTML = "<b>Data limitations:</b> " + meta.limitations.join(" · ");
+function fillLegend() {
+  d3.select("#legend").selectAll("span").data(Object.entries(meta.machines)).join("span")
+    .html(([m, d]) => `<i style="background:${MACHINE_COLOR[m]}"></i>M${m} · E${d.tools[0]}–E${d.tools[2]}`)
+    .attr("title", ([, d]) => `${d.name}, ${d.control}, ${d.drive}, ${tr("tool batch", "刀具批次")} ${d.batch}${d.note ? " — " + d.note : ""}`);
+}
+document.getElementById("limitations").innerHTML = meta.limitations.join("<br>");
 
 function syncControls() {
   if (fSel.value !== state.feature) fSel.value = state.feature;
-  document.querySelectorAll("input[name=norm]").forEach((el) => (el.checked = el.value === state.norm));
+  nSel.value = state.norm;
+  const prod = state.norm === "early" || state.norm === "raw", badge = document.getElementById("norm-badge");
+  badge.textContent = prod ? tr("production", "產線可用") : tr("trial only", "只限試驗");
+  badge.classList.toggle("warn", !prod);
   document.getElementById("ctl-dyn").checked = state.showDyn;
   for (const [id, out, key, unit] of [["ctl-thr", "out-thr", "vbThr", "µm"], ["ctl-jump", "out-jump", "jumpThr", "%"],
     ["ctl-rise", "out-rise", "riseThr", "%"]]) {
@@ -122,44 +130,113 @@ function syncControls() {
   }
 }
 
-// ---------- guided steps (apply settings + point at the relevant views) ----------
+// ---------- guided questions Q1–Q4: settings applied when a question is chosen (demo narrative) ----------
+const NOFIX = () => ({ fleet: null, m: { 1: null, 2: null, 3: null } });
 const GUIDE = {
-  1: { patch: { feature: "Tsp_mean", norm: "early", vbThr: 140, cRange: null, brushed: null, tool: 4,
-                fix: { mode: "fleet", fleet: null, m: { 1: null, 2: null, 3: null } } },
-       views: ["v1", "v2"],
-       note: "① Compare the wear curves (V1) and the replacement rules (V2). How much life does one fixed time for all machines "
-           + "leave unused, and how does that change with one time per machine? Remember: machine and tool batch are confounded." },
-  2: { patch: { norm: "early", cRange: null, brushed: null, showDyn: true },
-       views: ["v3", "v4", "v2"],
-       note: "② Which production signal (top rows of V3) follows wear in every end mill with a production-feasible normalization? "
-           + "Check in V4 whether the machines share one curve, then switch V2 to 'signal alarm' calibrated on the other machines: "
-           + "does one alarm level transfer to a new machine?" },
-  3: { patch: { feature: "Tsp_mean", norm: "early", tool: 1, runIdx: null, brushed: null, showDyn: true,
-                fix: { mode: "signal", fleet: null, m: { 1: null, 2: null, 3: null } }, alarm: { cal: "other", level: 1.25, persist: 1 } },
-       views: ["v5", "v6", "v2"],
-       note: "③ In V5, compare flagged layers (J = jump, R = rise) with the alarm line. Open runs before and inside a flagged layer in V6. "
-           + "Is it wear? Then try a longer persistence in V2 and see what it does to false and late alarms." },
+  1: { feature: "Tsp_mean", norm: "early", vbThr: 140, cRange: null, brushed: null, tool: 4, fix: { mode: "fleet", ...NOFIX() } },
+  2: { feature: "Tsp_mean", norm: "early", cRange: null, brushed: null, showDyn: true },
+  3: { feature: "Tsp_mean", norm: "early", cRange: null, brushed: null, fix: { mode: "signal", ...NOFIX() }, alarm: { cal: "other", level: 1.25, persist: 1 } },
+  4: { feature: "Tsp_mean", norm: "early", tool: 1, runIdx: null, brushed: null, showDyn: true,
+       fix: { mode: "signal", ...NOFIX() }, alarm: { cal: "other", level: 1.25, persist: 1 } },
 };
-document.querySelectorAll(".guide button").forEach((b) => (b.onclick = () => {
-  const g = GUIDE[b.dataset.step];
-  document.querySelectorAll(".guide button").forEach((x) => x.classList.toggle("on", x === b));
-  const note = document.getElementById("guide-note");
-  note.textContent = g.note;
-  note.hidden = false;
-  set(g.patch);
-  document.querySelectorAll(".view").forEach((v) => v.classList.toggle("flash", g.views.includes(v.id)));
-  document.getElementById(g.views[0]).scrollIntoView({ behavior: "smooth", block: "center" });
-  setTimeout(() => document.querySelectorAll(".view").forEach((v) => v.classList.remove("flash")), 2500);
+// compromise layout: main views per question; every other view (except the V2 scoreboard) becomes a linked thumbnail
+const LAYOUT = { 1: ["v1"], 2: ["v3", "v4"], 3: ["v4", "v5"], 4: ["v5", "v6"], all: ["v1", "v3", "v4", "v5", "v6"] };
+const OPENS = { v1: "1", v3: "2", v4: "2", v5: "4", v6: "4" }; // clicking a thumbnail opens the question that uses it
+const SLOTS = ["v1", "v3", "v4", "v5", "v6"];
+let step = "1";
+
+function applyLayout() {
+  const main = LAYOUT[step], mainc = document.getElementById("mainc"), list = document.getElementById("thumb-list");
+  main.forEach((v) => mainc.appendChild(document.getElementById(`slot-${v}`)));
+  SLOTS.filter((v) => !main.includes(v)).forEach((v) => list.appendChild(document.getElementById(`slot-${v}`)));
+  document.getElementById("layout").classList.toggle("all", step === "all");
+}
+function headerText() {
+  document.querySelectorAll(".tab").forEach((b) => b.classList.toggle("on", b.dataset.step === step));
+  document.getElementById("q-num").textContent = step === "all" ? "ALL" : `Q${step}`;
+  document.getElementById("q-title").innerHTML = STATIC[step === "all" ? "qall" : `q${step}`][state.lang];
+  document.getElementById("q-note").innerHTML = STATIC[step === "all" ? "noteall" : `note${step}`][state.lang];
+}
+function renderConclusion() {
+  const c = conclusion(step, ctx);
+  document.getElementById("concl").hidden = !c;
+  if (!c) return;
+  document.getElementById("concl-q").textContent = `Q${step}`;
+  document.getElementById("concl-title").textContent = c.title;
+  document.getElementById("concl-body").textContent = c.body;
+}
+function selectStep(s, withPatch = true) {
+  step = s;
+  headerText();
+  applyLayout();
+  if (withPatch && GUIDE[s]) set(GUIDE[s]); // re-renders the views through the subscription
+  VIEWS.forEach((v) => v.update(null)); // widths changed with the layout
+  renderConclusion();
+  measureBar();
+  scrollTo({ top: 0, behavior: "smooth" });
+}
+document.querySelectorAll(".tab").forEach((b) => (b.onclick = () => selectStep(b.dataset.step)));
+SLOTS.forEach((v) => document.getElementById(`slot-${v}`).addEventListener("click", (ev) => {
+  if (ev.currentTarget.parentElement.id === "thumb-list") selectStep(OPENS[v]);
 }));
 
+// ---------- language ----------
+document.querySelectorAll(".lang button").forEach((b) => (b.onclick = () => { rememberLang(b.dataset.lang); set({ lang: b.dataset.lang }); }));
+
+// ---------- ⓘ popovers: long explanations are hidden next to the panel title (click / tap to open) ----------
+document.querySelectorAll(".info").forEach((btn) => {
+  const body = document.getElementById(btn.getAttribute("aria-controls"));
+  btn.onclick = (ev) => {
+    ev.stopPropagation();
+    const open = body.hidden;
+    document.querySelectorAll(".info-body").forEach((b) => (b.hidden = true));
+    document.querySelectorAll(".info").forEach((b) => b.setAttribute("aria-expanded", "false"));
+    body.hidden = !open;
+    btn.setAttribute("aria-expanded", String(open));
+  };
+});
+document.addEventListener("click", (ev) => {
+  if (ev.target.closest(".info-body")) return;
+  document.querySelectorAll(".info-body").forEach((b) => (b.hidden = true));
+  document.querySelectorAll(".info").forEach((b) => b.setAttribute("aria-expanded", "false"));
+});
+
+// sticky header height -> CSS variable, so the sticky columns sit below it
+function measureBar() {
+  document.documentElement.style.setProperty("--bar-h", `${document.getElementById("bar").offsetHeight}px`);
+}
+
 // ---------- wire up ----------
+applyStatic();
+fillFeatureSelect();
+fillLegend();
+const qs = new URLSearchParams(location.search).get("step");
+step = ["1", "2", "3", "4", "all"].includes(qs) ? qs : "1";
+headerText();
+applyLayout(); // place the slots before the first render so each view gets its final width
 derive();
 VIEWS.forEach((v) => v.init(ctx));
+syncControls();
+renderConclusion();
+measureBar();
 on((keys) => {
+  if (keys.has("lang")) {
+    applyStatic();
+    fillFeatureSelect();
+    fillLegend();
+    headerText();
+    syncControls();
+    VIEWS.forEach((v) => v.update(null));
+    renderConclusion();
+    measureBar();
+    return;
+  }
   if (keys.has("showDyn")) fillFeatureSelect();
   derive(keys);
   syncControls();
   VIEWS.forEach((v) => v.update(keys));
+  renderConclusion();
 });
+if (GUIDE[qs]) selectStep(qs); // an explicit ?step=1..4 also applies that question's settings (used for report figures)
 let rt;
-addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => VIEWS.forEach((v) => v.update(null)), 200); });
+addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => { measureBar(); VIEWS.forEach((v) => v.update(null)); }, 200); });

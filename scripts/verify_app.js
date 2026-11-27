@@ -12,7 +12,7 @@ const out = process.argv[2] || ".";
   const p = await b.newPage({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 });
   const errs = [];
   p.on("pageerror", (e) => errs.push(e.message));
-  await p.goto("http://localhost:8765/index.html");
+  await p.goto("http://localhost:8765/index.html?lang=en"); // English UI: the checks compare English labels
   await p.waitForTimeout(2500);
   const res = [];
   const check = (name, got, want) => res.push({ name, got, want, ok: String(got) === String(want) });
@@ -35,8 +35,9 @@ const out = process.argv[2] || ".";
   // V3 pooled rho of selected feature (Tsp_mean, ratio)
   const rho = await p.$$eval("#v3 g.row", (rows) => {
     const r = rows.find((x) => x.querySelector(".rl").textContent.startsWith("Spindle torque, mean"));
-    const cells = [...r.querySelectorAll("g.cell text")];
-    return cells[cells.length - 1].textContent;
+    // cells no longer print numbers (values on hover): read the rho bound to the "All" cell, same 2-decimal format as before
+    const cells = [...r.querySelectorAll("rect.cell")];
+    return cells[cells.length - 1].__data__.rho.toFixed(2).replace("0.", ".");
   });
   check("V3 pooled rho Tsp_mean", rho, exp.rho_all.toFixed(2).replace("0.", "."));
   // V5 T1 flags: expect a J flag (layer 15 jump)

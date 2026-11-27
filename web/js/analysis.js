@@ -181,3 +181,41 @@ export function layerDiagnostics(runs, f) {
   }
   return out;
 }
+
+/**
+ * Fixed replacement time per tool for a fixed-time rule.
+ *  fleet      : one time for all machines (dragged value or the earliest life of all tools)
+ *  machine    : one time per machine (dragged value or the earliest life on that machine; in-sample)
+ *  machineLoo : per tool, the earliest life among the OTHER tools of the same machine (leave-one-out)
+ * Returns a function tool -> replacement time [min].
+ */
+export function fixTimes(life, mode, fix) {
+  const auto = (list) => d3.min(list.filter((d) => d.reached), (d) => d.C) ?? d3.min(list, (d) => d.C);
+  const machineOf = new Map(life.map((d) => [d.tool, d.machine]));
+  if (mode === "machineLoo") {
+    const o = new Map(life.map((d) => [d.tool, auto(life.filter((e) => e.machine === d.machine && e.tool !== d.tool))]));
+    return (t) => o.get(t);
+  }
+  if (mode === "fleet") { const t = fix.fleet ?? auto(life); return () => t; }
+  const o = {};
+  for (const m of [1, 2, 3]) o[m] = fix.m[m] ?? auto(life.filter((d) => d.machine === m));
+  return (t) => o[machineOf.get(t)];
+}
+
+/** Error summary of a fixed-time rule over the tools that reach the threshold (error = replacement − threshold time). */
+export function fixedStats(life, tf) {
+  const errs = life.filter((d) => d.reached).map((d) => tf(d.tool) - d.C);
+  return { mae: errs.length ? d3.mean(errs, Math.abs) : NaN, late: errs.filter((e) => e > 0.05).length, missed: 0, n: errs.length };
+}
+
+/** Error summary of a signal alarm (output of signalAlarms); missed alarms are counted separately, not in the MAE. */
+export function alarmStats(alarms) {
+  const errs = alarms.filter((d) => d.reached && d.alarm).map((d) => d.err);
+  return { mae: errs.length ? d3.mean(errs, Math.abs) : NaN, late: errs.filter((e) => e > 0).length,
+           missed: alarms.filter((d) => d.reached && !d.alarm).length, n: errs.length };
+}
+
+/** Layer flag rule shared by V5 and the conclusion box: jump (local peak) ≥ jumpThr % or in-layer rise ≥ riseThr %. */
+export function isFlagged(l, jumpThr, riseThr) {
+  return (l.jumpPeak && Math.abs(l.jump) >= jumpThr) || Math.abs(l.rise) >= riseThr;
+}
