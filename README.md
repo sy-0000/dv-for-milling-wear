@@ -47,24 +47,22 @@ python scripts/verify.py
 |---|---|---|
 | `download_data.py` | 用 curl 下載並驗證 sha256 | `data/raw/*.h5` |
 | `inspect_h5.py` | 列出 h5 結構 | 終端機輸出 |
-| `feasibility_check.py` | 階段 3 可行性試算 | `data/feasibility_*.csv`、`docs/figs/feasibility_scatter.png` |
 | `extract_features.py` | 每個 run 萃取特徵、envelope、代表性波形 | `data/features.csv`、`data/signals/` |
 | `eda.py` | 階段 5 探索分析 | `data/eda_*.csv`、`docs/figs/eda_*.png` |
 | `walkthrough_figs.py` | 資料導覽說明圖 | `docs/figs/walk_*.png` |
+| `wear_phases_fig.py` | 各機台磨耗階段圖(需先跑 `eda.py`) | `docs/figs/wear_phases_by_machine.png`、`data/wear_phase_rates.csv` |
 | `build_web_data.py` | 產生網頁用的精簡資料 | `web/data/` |
+| `report_figs.js` → `compose_report_figs.py` | 報告截圖與合成圖(需 Playwright、`web/` 在 :8765 起伺服器) | `report/figs/` |
 | `verify.py` / `verify_app.js` | 數字核對(資料端 / 網頁端) | 終端機輸出、`data/verify_expected.json` |
 
 ## 文件(`docs/`)
 | 檔案 | 內容 |
 |---|---|
-| `01_paper_and_filelist_notes.md` | 論文導讀、filelist 統計、開檔核對 |
-| `02_feasibility.md` | 階段 3:Q3 可行性 |
-| `03_eda.md` | 階段 5:EDA 發現 F1–F8 |
-| `04_data_walkthrough.md` | 資料導覽(實驗、訊號、處理流程、F5/F7 詳解) |
-| `05_logic_chain_draft.md` | VA 邏輯鏈草稿(報告第 2–5 節底稿) |
-| `06_design_options.md` | 版面方案與編碼理由 |
-| `07_verification.md` | 階段 8 驗證紀錄 |
-| `08_demo_script.md` | demo 與影片腳本 |
+| `01_data.md` | 論文與資料:實驗結構、VB 與壽命、訊號、限制與勘誤、特徵萃取 |
+| `02_findings.md` | 探索分析發現 F1–F8 |
+| `03_logic_and_design.md` | VA 邏輯鏈(使用者、CH、任務、分析元件、洞察)與視覺設計 |
+| `04_verification.md` | 驗證紀錄(數字核對、無障礙) |
+| `05_demo_script.md` | Demo 講稿與預想問題 |
 
 ## 資料限制(系統和報告中都要標註)
 - VB 每 1–2 層(約 40 個 run)才用顯微鏡量一次,其餘為線性內插。
