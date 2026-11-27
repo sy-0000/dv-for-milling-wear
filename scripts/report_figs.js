@@ -1,6 +1,6 @@
 // Screenshots for the report (Sections 6 and 8). Needs Playwright and a local server on :8765 serving web/.
 // Usage: node scripts/report_figs.js   then   python scripts/compose_report_figs.py
-// Output: report/figs/teaser.png, interface.png and raw panels report/figs/raw_*.png
+// Output: report/figs/teaser.png and raw panels report/figs/raw_*.png
 const { chromium } = require("playwright");
 const path = require("path");
 const out = path.join(__dirname, "..", "report", "figs");
@@ -21,15 +21,6 @@ const out = path.join(__dirname, "..", "report", "figs");
 
   await clickRun(443);
   for (const v of ["v1", "v3", "v4"]) await shot(`#${v}`, `raw_${v}.png`);
-  // Fig. 2: whole interface in question Q4 (main views V5 + V6, other views as thumbnails), run 443 open
-  const q = await b.newPage({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2 });
-  await q.goto("http://localhost:8765/index.html?lang=en&step=4");
-  await q.waitForTimeout(2500);
-  await q.$$eval("#v5 circle", (cs) => cs.find((c) => c.__data__ && c.__data__.run === 443)
-    .dispatchEvent(new MouseEvent("click", { bubbles: true })));
-  await q.waitForTimeout(1000);
-  await q.mouse.move(5, 5);
-  await q.screenshot({ path: path.join(out, "interface.png"), fullPage: true });
 
   // Scenario 1: the same leave-one-end-mill-out test for a fixed time per machine and for the signal alarm
   await p.click('#v2-mode button[data-mode="machineLoo"]');
@@ -37,7 +28,6 @@ const out = path.join(__dirname, "..", "report", "figs");
   await shot("#v2 .plot", "raw_s1_fixed_loo.png");
   await p.click('#v2-mode button[data-mode="signal"]');
   await p.waitForTimeout(600);
-  await shot("#v2 .plot", "raw_s1_signal_other.png");
   await p.check('input[name=cal][value="loo"]');
   await p.waitForTimeout(600);
   await shot("#v2 .plot", "raw_s1_signal_loo.png");
