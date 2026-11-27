@@ -1,11 +1,11 @@
 // Stage 8 browser check: compares numbers displayed by the app with data/verify_expected.json (from verify.py),
 // and saves color-vision-deficiency screenshots. Needs Playwright + a local server on :8765 serving web/.
-// Usage: node scripts/verify_app.js <output_dir>
+// Usage: node scripts/verify_app.js [output_dir]   (screenshots default to docs/figs/stage8_cvd_*.png)
 const { chromium } = require("playwright");
 const fs = require("fs");
 const path = require("path");
 const exp = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "data", "verify_expected.json")));
-const out = process.argv[2] || ".";
+const out = process.argv[2] || path.join(__dirname, "..", "docs", "figs"); // colour-vision-deficiency screenshots
 
 (async () => {
   const b = await chromium.launch();
@@ -104,7 +104,7 @@ const out = process.argv[2] || ".";
   for (const t of ["deuteranopia", "protanopia", "tritanopia"]) {
     await cdp.send("Emulation.setEmulatedVisionDeficiency", { type: t });
     await p.waitForTimeout(300);
-    await p.screenshot({ path: path.join(out, `cvd_${t}.png`) });
+    await p.screenshot({ path: path.join(out, `stage8_cvd_${t}.png`) });
   }
   console.log(errs.length ? "page errors:\n" + errs.join("\n") : "no page errors");
   console.log("OVERALL:", res.every((r) => r.ok) && !errs.length ? "PASS" : "FAIL");

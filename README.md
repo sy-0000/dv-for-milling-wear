@@ -1,6 +1,6 @@
 # WearLens — Visual analytics of end-mill wear across three machine tools
 
-資料視覺化期末專題(D3.js VA 系統)。系統名稱 WearLens 為暫定名稱。
+資料視覺化期末專題(D3.js VA 系統)。
 
 - **目標使用者**:要在多台機台導入刀具狀態監控的製程/設備工程師。設定為產線上**沒有測力計**,只有機台控制器訊號;測力計只是試驗時的參考。
 - **資料**:Denkena, Klemme & Stiehl (2023), *Data in Brief* 50:109574;Mendeley Data doi:10.17632/zpxs87bjt8(CC BY 4.0)。9 把端銑刀(本專案稱 E1–E9,原始檔名中為 T1–T9)× 3 台機台,共 6,418 個 run。
@@ -53,7 +53,7 @@ python scripts/verify.py
 | `wear_phases_fig.py` | 各機台磨耗階段圖(需先跑 `eda.py`) | `docs/figs/wear_phases_by_machine.png`、`data/wear_phase_rates.csv` |
 | `build_web_data.py` | 產生網頁用的精簡資料 | `web/data/` |
 | `report_figs.js` → `compose_report_figs.py` | 報告截圖與合成圖(需 Playwright、`web/` 在 :8765 起伺服器) | `report/figs/` |
-| `verify.py` / `verify_app.js` | 數字核對(資料端 / 網頁端) | 終端機輸出、`data/verify_expected.json` |
+| `verify.py` / `verify_app.js` | 數字核對(資料端 / 網頁端) | 終端機輸出、`data/verify_expected.json`、色盲模擬截圖 `docs/figs/stage8_cvd_*.png` |
 
 ## 文件(`docs/`)
 | 檔案 | 內容 |
