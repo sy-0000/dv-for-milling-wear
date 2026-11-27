@@ -10,3 +10,5 @@ report/*.bbl
 report/*.blg
 report/*.pdf
 report/*.brf
+report/*.fdb_latexmk
+report/*.fls
