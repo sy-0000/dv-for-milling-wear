@@ -1,8 +1,8 @@
 """Stage 3 feasibility check: do simple signal features change with tool wear VB?
 
 Subsamples every Nth run per tool, detects the cutting window from the dynamometer's
-XY resultant force, computes a few features, then plots feature vs VB per tool.
-Read-only on data/raw. Outputs: data/feasibility_features.csv, docs/figs/feasibility_*.png
+XY resultant force, computes a few features and their Spearman rho with VB per tool.
+Read-only on data/raw. Outputs: data/feasibility_features.csv, data/feasibility_spearman.csv
 
 Usage: python scripts/feasibility_check.py [--step 3]
 """
@@ -11,17 +11,13 @@ from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
 import h5py
-import matplotlib
 import numpy as np
 import pandas as pd
 from scipy.stats import spearmanr
 
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 RAW = ROOT / "data" / "raw"
-FIG = ROOT / "docs" / "figs"
 TRIM = 0.15  # s trimmed at each end of the cutting window (entry/exit transients, ~100 ms sync offset)
 
 
@@ -71,7 +67,6 @@ def features(path):
 
 FEATS = ["F_xy_mean", "F_xy_rms", "F_x_std", "F_y_std", "F_z_std", "F_xy_p99",
          "T_spindle_mean", "axis_x_mean_abs", "axis_y_mean_abs", "pcd_y_std"]
-COLORS = {1: "#2a7ab9", 2: "#e69f00", 3: "#555555"}  # machine colors (Okabe-Ito-like, CVD-safe)
 
 
 def main():
@@ -98,20 +93,6 @@ def main():
     piv["median"] = piv.median(axis=1).round(2)
     print(piv.sort_values("median", ascending=False).to_string())
     piv.to_csv(ROOT / "data" / "feasibility_spearman.csv")
-
-    FIG.mkdir(parents=True, exist_ok=True)
-    fig, axs = plt.subplots(2, 5, figsize=(18, 7))
-    for axp, ft in zip(axs.flat, FEATS):
-        for tool, g in df.groupby("tool"):
-            axp.scatter(g.wear, g[ft], s=3, alpha=0.5, color=COLORS[g.machine.iat[0]])
-        axp.set_title(f"{ft}  (median ρ={piv.loc[ft, 'median']})", fontsize=9)
-        axp.set_xlabel("VB [µm]", fontsize=8)
-    for mach, c in COLORS.items():
-        axs[0, 0].scatter([], [], color=c, label=f"M{mach}")
-    axs[0, 0].legend(fontsize=8)
-    fig.suptitle(f"Feasibility: feature vs VB (every {a.step}rd run, cutting window only; color = machine)")
-    fig.tight_layout()
-    fig.savefig(FIG / "feasibility_scatter.png", dpi=100)
 
 
 if __name__ == "__main__":

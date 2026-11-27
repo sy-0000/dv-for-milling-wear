@@ -1,6 +1,6 @@
 """Stage 5 exploratory analysis on data/features.csv. Read-only; writes figures + tables.
 
-Outputs: docs/figs/eda_*.png, data/eda_*.csv, data/features_enriched.csv
+Outputs: docs/figs/eda_2_spearman_heatmap.png, docs/figs/eda_4_position_effect.png, data/eda_*.csv, data/features_enriched.csv
 Usage: python scripts/eda.py
 """
 from pathlib import Path
@@ -63,27 +63,6 @@ rate = (d.groupby(["tool", "layer"])
         .reset_index())
 rate.to_csv(ROOT / "data" / "eda_wear_rate_per_layer.csv", index=False)
 
-fig, ax = plt.subplots(1, 2, figsize=(13, 4.5))
-for t, g in d.groupby("tool"):
-    m = g.machine.iat[0]
-    ax[0].plot(g.C_min, g.VB_um, color=MC[m], lw=1.2, alpha=.85)
-    ax[0].annotate(f"T{t}", (g.C_min.iat[-1], g.VB_um.iat[-1]), fontsize=7, color=MC[m], xytext=(2, 0),
-                   textcoords="offset points")
-for m, c in MC.items():
-    ax[0].plot([], [], color=c, label=f"M{m}")
-ax[0].axhline(150, ls=":", color="k", lw=.8)
-ax[0].text(1, 152, "paper's end of life VB≈150 µm", fontsize=7)
-ax[0].set(xlabel="cumulated contact time C [min]", ylabel="VB [µm] (mostly interpolated)", title="Wear curves")
-ax[0].legend(fontsize=8)
-for m, g in rate.groupby("machine"):
-    ax[1].scatter(g.VB_mid, g.rate, s=12, color=MC[m], alpha=.8, label=f"M{int(m)}")
-ax[1].set(xlabel="mean VB of layer [µm]", ylabel="wear rate [µm/min] (slope per layer)", ylim=(-0.5, 8),
-          title="Wear rate per layer: break-in → steady → accelerated")
-ax[1].text(25, 7.3, "first layer (break-in): ~13 µm/min, off scale", fontsize=7)
-ax[1].legend(fontsize=8)
-fig.tight_layout()
-fig.savefig(FIG / "eda_1_wear_life.png", dpi=110)
-
 # ---------- 2. Spearman: per tool (raw) & pooled with normalizations ----------
 rows = []
 for f in FEATS:
@@ -120,25 +99,9 @@ ax.set_title("Spearman ρ(feature, VB): per tool (left) and all 9 tools pooled w
 fig.tight_layout()
 fig.savefig(FIG / "eda_2_spearman_heatmap.png", dpi=110)
 
-# ---------- 3. cross-machine comparability of top features (ratio-normalized) ----------
+# features used for the position-effect table
 top = ["Fxy_mean", "Tsp_mean", "ax_y_mean", "A_tooth", "Fy_std", "runout_ratio"]
-fig, axs = plt.subplots(2, 3, figsize=(15, 8))
-for axp, f in zip(axs.flat, top):
-    for t, g in d.groupby("tool"):
-        sm = g[f + "__ratio"].rolling(15, center=True, min_periods=5).median()
-        axp.plot(g.VB_um, sm, color=MC[g.machine.iat[0]], lw=1, alpha=.85)
-    axp.axhline(1, color="k", lw=.6, ls=":")
-    axp.axvspan(*REF_BAND, color="k", alpha=.06)
-    axp.set_title(f"{f} / tool reference (VB 50–60)", fontsize=9)
-    axp.set_xlabel("VB [µm]", fontsize=8)
-for m, c in MC.items():
-    axs[0, 0].plot([], [], color=c, label=f"M{m}")
-axs[0, 0].legend(fontsize=8)
-fig.suptitle("Normalized features vs VB (rolling median of 15 runs per tool). Do machines overlap?")
-fig.tight_layout()
-fig.savefig(FIG / "eda_3_normalized_overlap.png", dpi=110)
-
-# ---------- 4. position-in-layer effect ----------
+# ---------- 3. position-in-layer effect ----------
 pos = d.groupby(["machine", "x_pass_mm"])[[f + "__resid" for f in top]].mean().reset_index()
 pos.to_csv(ROOT / "data" / "eda_position_effect.csv", index=False)
 fig, axs = plt.subplots(1, 3, figsize=(15, 4))
@@ -155,7 +118,7 @@ print("position effect range [%]:")
 print((100 * pos.groupby("machine")[[f + "__resid" for f in ["Fxy_mean", "Tsp_mean", "ax_y_mean"]]]
        .agg(lambda s: s.max() - s.min())).round(1).to_string())
 
-# ---------- 5. gaps & anomalies ----------
+# ---------- 4. gaps & anomalies ----------
 d["dC"] = d.groupby("tool").C_s.diff()
 gaps = d[d.dC > 30][["tool", "machine", "run", "C_s", "dC", "VB_um", "layer"]]
 gaps.to_csv(ROOT / "data" / "eda_gaps.csv", index=False)
@@ -179,17 +142,3 @@ if len(anom):
 # M2 aliasing hint: torque_spindle std relative to mean, per machine
 d["Tsp_cv"] = d.Tsp_std / d.Tsp_mean
 print("Tsp std/mean by machine:", d.groupby("machine").Tsp_cv.median().round(3).to_dict())
-
-fig, axs = plt.subplots(1, 2, figsize=(13, 4))
-for m, g in d.groupby("machine"):
-    axs[0].hist(g.Tsp_cv, bins=60, alpha=.6, color=MC[m], label=f"M{m}")
-axs[0].set(xlabel="std / mean of |torque_spindle| within run", ylabel="runs",
-           title="Spindle torque fluctuation (M2: aliasing suspected)")
-axs[0].legend(fontsize=8)
-for t, g in d.groupby("tool"):
-    axs[1].plot(g.C_min, g["Fxy_mean__rz"], lw=.5, color=MC[g.machine.iat[0]], alpha=.7)
-axs[1].axhline(6, ls=":", color="r")
-axs[1].axhline(-6, ls=":", color="r")
-axs[1].set(xlabel="C [min]", ylabel="robust z of detrended Fxy_mean", title="Run-level outliers (|z|>6 dotted)")
-fig.tight_layout()
-fig.savefig(FIG / "eda_5_anomalies.png", dpi=110)
