@@ -1,4 +1,4 @@
-# 階段 8:驗證紀錄
+# 04 驗證紀錄
 
 腳本:`scripts/verify.py`(資料端)、`scripts/verify_app.js`(瀏覽器端,需在 `web/` 起 :8765 伺服器)
 

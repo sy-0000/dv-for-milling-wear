@@ -1,4 +1,4 @@
-"""Explanatory figures for the data walkthrough (docs/04_data_walkthrough.md). Read-only.
+"""Explanatory figures for the data walkthrough (docs/01_data.md, docs/02_findings.md). Read-only.
 
 Usage: python scripts/walkthrough_figs.py
 """
