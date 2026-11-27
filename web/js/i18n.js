@@ -6,7 +6,7 @@ import { state } from "./state.js";
 export const tr = (en, zh) => (state.lang === "zh" ? zh : en);
 
 export const STATIC = {
-  brand: { en: "End-mill wear", zh: "刀具磨耗判讀" },
+  subbrand: { en: "END-MILL WEAR", zh: "刀具磨耗判讀" },
   q1: { en: "One replacement time for all machines?", zh: "所有機台用同一個換刀時間？" },
   q2: { en: "Does torque rise with wear?", zh: "扭矩會跟著磨耗上升嗎？" },
   q3: { en: "Can a signal set the alarm?", zh: "能用訊號設定警報嗎？" },
