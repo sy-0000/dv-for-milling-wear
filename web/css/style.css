@@ -6,6 +6,7 @@
   --text: #1d1d1b;
   --text-2: #5c5b57;
   --muted: #8f8e89;
+  --axis: #92918c;  /* axis lines: 3.2 : 1 on white (non-text contrast ≥ 3 : 1) */
   --grid: #ecebe7;
   --border: #e3e2dd;
   --band: #f5f4f1;
@@ -130,7 +131,7 @@ h3 select { font-weight: 600; }
 .plot svg { display: block; overflow: visible; }
 svg text { fill: var(--text); font-size: var(--fs-body); }
 svg .axis text { fill: var(--muted); font-size: var(--fs-note); }
-svg .axis path, svg .axis line { stroke: #c9c8c3; }
+svg .axis path, svg .axis line { stroke: var(--axis); }
 svg .grid line { stroke: var(--grid); }
 svg .grid path { display: none; }
 svg .lbl-2 { fill: var(--text-2); }
