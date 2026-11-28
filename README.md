@@ -2,6 +2,10 @@
 
 資料視覺化期末專題(D3.js VA 系統)。
 
+![WearLens 研究故事線:從固定換刀的浪費出發,測試主軸扭矩能否當換刀依據,以及各規則的誤差計算方式](docs/figs/storyline.png)
+
+> 圖的原始檔:`docs/figs/storyline.html`(用瀏覽器開啟即可;改完後重新截圖成 `storyline.png`)。
+
 - **目標使用者**:要在多台機台導入刀具狀態監控的製程/設備工程師。設定為產線上**沒有測力計**,只有機台控制器訊號;測力計只是試驗時的參考。
 - **資料**:Denkena, Klemme & Stiehl (2023), *Data in Brief* 50:109574;Mendeley Data doi:10.17632/zpxs87bjt8(CC BY 4.0)。9 把端銑刀(本專案稱 E1–E9,原始檔名中為 T1–T9)× 3 台機台,共 6,418 個 run。
 

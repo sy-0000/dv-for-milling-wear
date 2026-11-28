@@ -278,6 +278,22 @@ Together, A1--A4 let the user state a hypothesis (``torque rises with wear'', ``
 \label{sec:scenarios}
 The engineer uses the spindle torque, the production normalization and a VB limit of 140\,$\mu$m.
 
+\begin{figure*}[tb]
+  \centering
+  \begin{minipage}[b]{0.46\textwidth}
+  \includegraphics[width=\linewidth]{scenario1_col}
+  \caption{Scenario 1 in V2, both rules tested leave-one-out. (a) Fixed time per machine: dashed ticks are the
+  replacement times. (b) Spindle-torque alarm: triangles are alarms; light bars are the life until VB\,=\,140\,$\mu$m.}
+  \label{fig:s1}
+  \end{minipage}\hfill
+  \begin{minipage}[b]{0.50\textwidth}
+  \includegraphics[width=\linewidth]{scenario2_col}
+  \caption{Scenario 2. V5: E1 with trailing median (black), alarm level (dashed) and alarm (accent triangle) in layer 15,
+  flagged J (accent). V6: run 443 (layer 15) against the pinned run 420 (layer 14, grey).}
+  \label{fig:s2}
+  \end{minipage}
+\end{figure*}
+
 \textbf{Scenario 1: Can a machine signal replace fixed times? (Q1--Q3; CH1, CH2).} In Q1, V1 shows that the M2 end mills
 differ mainly in the slow middle phase, while the three end mills of one machine almost overlap (T1). In V2, one time for
 all machines (53.5\,min) leaves 34--36\,\% of each M2 end mill's life unused; one time per machine reduces the mean unused
@@ -294,14 +310,6 @@ even per machine the alarm loses to a fixed time, because the lives on one machi
 this tool and process the trial supports per-machine fixed times; a torque alarm needs machine-specific calibration and
 serves at most as a safety net.
 
-\begin{figure}[tb]
-  \centering
-  \includegraphics[width=\columnwidth]{scenario1_col}
-  \caption{Scenario 1 in V2, both rules tested leave-one-out. (a) Fixed time per machine: dashed ticks are the
-  replacement times. (b) Spindle-torque alarm: triangles are alarms; light bars are the life until VB\,=\,140\,$\mu$m.}
-  \label{fig:s1}
-\end{figure}
-
 \textbf{Scenario 2: Is the largest alarm error wear? (Q4; CH3, CH1).} The largest alarm error belongs to E1 (12.3\,min early
 at VB\,=\,103\,$\mu$m) under every calibration. V5 shows the alarm in layer 15, one of only two flagged layers among 222 at
 the default thresholds (the other is E3's first layer, during break-in) (T5; \cref{fig:s2}). The engineer pins run 420 of
@@ -315,14 +323,6 @@ flagged layers, so they come from the level itself; without E1 the leave-one-out
 \textbf{Insight:} one layer-boundary event dominated the evaluation of the signal rule; identifying it shows that the rule's
 remaining weakness is the alarm level, confirming Scenario~1. Neither insight is visible in a single chart: both needed the
 same test for all rules, the cross-machine comparison and the raw signals of two chains around one event.
-
-\begin{figure}[tb]
-  \centering
-  \includegraphics[width=\columnwidth]{scenario2_col}
-  \caption{Scenario 2. V5: E1 with trailing median (black), alarm level (dashed) and alarm (accent triangle) in layer 15,
-  flagged J (accent). V6: run 443 (layer 15) against the pinned run 420 (layer 14, grey).}
-  \label{fig:s2}
-\end{figure}
 
 %% ------------------------------------------------------------------
 \section{Limitations and Future Work}
