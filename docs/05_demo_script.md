@@ -18,7 +18,7 @@
 | V6 | 單次切削細節圖 |
 | run | 一次切削 |
 | J / R | 層間跳動 / 層內上升 |
-| leave-one-out (LOO) | 留一法 |
+| leave-one-out (LOO) | 留一交叉驗證（Leave-One-Out Cross-Validation） |
 
 ---
 
@@ -36,13 +36,13 @@
   2. 指中間 **V1**：三列從上到下分別是 M1、M2、M3，再指虛線（VB 140 µm）。
   3. 指右邊 **V2**：規則停在 **fixed · all**（固定 · 全廠），指 M2 三條的淺色段「unused 34–36 %」。
   4. ⊕ 拖曳 V2 上的黑色虛線往右，出現斜線段（超過門檻），再按 **Reset**。
-  5. 點 V2 的規則按鈕 **per machine · LOO**（每台 · 留一法），指 V2 底下的摘要「mean |error| 1.7 min · 3 overrun(s)」。
+  5. 點 V2 的規則按鈕 **per machine · LOO**（每台 · 留一交叉驗證），指 V2 底下的摘要「mean |error| 1.7 min · 3 overrun(s)」。
   6. 指計分板裡的虛線 **baseline**，再指右下的**結論框**。
 - **畫面重點**：V1 同一列的三把刀幾乎重疊，M2 中段特別平。V2 的長條從 0 開始：深色是用掉的壽命、淺色是浪費的壽命、斜線是超過門檻。
 
-**中文**：先看最基本的做法：固定時間換刀。中間是九把刀的磨耗曲線，一列是一台機台。第 2 台機台的曲線中段比較平，要 83 分鐘才磨到門檻，另外兩台大約 54 到 56 分鐘；同一台機台的三把刀則幾乎重疊。要注意，第 2 台機台的刀來自另一個批次，所以這個差異分不出是機台還是刀的關係。右邊的換刀規則圖，每把刀一條長條。全廠用同一個時間 53.5 分鐘的話，第 2 台機台的每把刀會浪費 34 到 36% 的壽命。那改成每台機台各訂一個時間；但如果用同一批刀訂時間、又用同一批刀評分，等於先看答案再考試，會太樂觀。所以我們用留一法：每次拿一把刀出來當測試，只用同一台機台另外兩把刀來訂時間，再看這把刀實際差多少，三把刀輪流做。結果平均誤差 1.7 分鐘，3 次超過門檻、最多 2 分鐘，沒有漏報。這是計分板上的虛線基準，後面的訊號規則都跟它比。
+**中文**：先看最基本的做法：固定時間換刀。中間是九把刀的磨耗曲線，一列是一台機台。第 2 台機台的曲線中段比較平，要 83 分鐘才磨到門檻，另外兩台大約 54 到 56 分鐘；同一台機台的三把刀則幾乎重疊。要注意，第 2 台機台的刀來自另一個批次，所以這個差異分不出是機台還是刀的關係。右邊的換刀規則圖，每把刀一條長條。全廠用同一個時間 53.5 分鐘的話，第 2 台機台的每把刀會浪費 34 到 36% 的壽命。那改成每台機台各訂一個時間；但如果用同一批刀訂時間、又用同一批刀評分，等於先看答案再考試，會太樂觀。所以我們用留一交叉驗證：每次拿一把刀出來當測試，只用同一台機台另外兩把刀來訂時間，再看這把刀實際差多少，三把刀輪流做。結果平均誤差 1.7 分鐘，3 次超過門檻、最多 2 分鐘，沒有漏報。這是計分板上的虛線基準，後面的訊號規則都跟它比。
 
-**English**: We start with the basic practice, a fixed replacement time. In the centre are the wear curves of the nine end mills, one row per machine. Machine 2's middle phase is flatter, so it reaches the limit after 83 minutes instead of 54 to 56, while the three end mills on one machine almost overlap. Note that machine 2's end mills come from another batch, so machine and batch cannot be separated. On the right, the replacement-rule chart shows one bar per end mill. With one time for all machines, 53.5 minutes, every end mill on machine 2 wastes 34 to 36 percent of its life. We then set one time per machine. Setting and scoring it on the same tools would be like seeing the answers before the exam, so we use leave-one-out: each end mill in turn is held out as the test, the time is set from the other two on its machine, and we check how far off it is. Mean error 1.7 minutes, three overruns of at most 2 minutes, no miss. This is the dashed baseline in the scoreboard that the signal rules are compared with.
+**English**: We start with the basic practice, a fixed replacement time. In the centre are the wear curves of the nine end mills, one row per machine. Machine 2's middle phase is flatter, so it reaches the limit after 83 minutes instead of 54 to 56, while the three end mills on one machine almost overlap. Note that machine 2's end mills come from another batch, so machine and batch cannot be separated. On the right, the replacement-rule chart shows one bar per end mill. With one time for all machines, 53.5 minutes, every end mill on machine 2 wastes 34 to 36 percent of its life. We then set one time per machine. Setting and scoring it on the same tools would be like seeing the answers before the exam, so we use leave-one-out cross-validation: each end mill in turn is held out as the test, the time is set from the other two on its machine, and we check how far off it is. Mean error 1.7 minutes, three overruns of at most 2 minutes, no miss. This is the dashed baseline in the scoreboard that the signal rules are compared with.
 
 ## 1:35–2:45 Q2：扭矩會跟著磨耗上升嗎？
 - **操作**：
@@ -54,9 +54,9 @@
   6. 指右下的**結論框**。
 - **畫面重點**：V3 每列是一個特徵、每欄是一把刀，顏色是 ρ（藍－灰－紅，0 為中點），預設依「最差那把刀的 ρ」排序。測力計那組是灰底，表示只作參考。
 
-**中文**：接下來檢驗假設：刀越鈍，維持同樣轉速和進給需要越大的力，所以機台的主軸扭矩應該跟著磨耗上升。中間的矩陣列出每個訊號和磨耗的相關程度，一格是一把刀。這裡用的是斯皮爾曼等級相關係數：它只看排名，問的是「磨耗越大，訊號是不是也越大」，不要求兩者成直線關係，也比較不受極端值影響。刀具磨耗是快、慢、快三段，不是直線，所以用它比較適合。主軸扭矩在每一把刀都有 0.97 以上，九把刀合起來是 0.95，接近測力計橫向力的 0.98。但如果直接用原始扭矩，九把合起來只剩 0.57，因為三台機台的扭矩起點不同，例如第 3 台的新刀扭矩本來就比較低，混在一起排名就亂了。所以要標準化：每把刀的扭矩都除以它自己前 3 到 6 分鐘的中位數，變成「是新刀時的幾倍」。這只用到新刀剛開始的資料，產線上做得到，不需要顯微鏡。右邊的散佈圖，橫軸是磨耗、縱軸是標準化後的扭矩：三台機台都往上升，磨到門檻時大約是新刀的 1.24 到 1.37 倍。所以扭矩看得到磨耗趨勢；但相關高只代表趨勢一致，還不代表能決定什麼時候換刀。
+**中文**：接下來檢驗假設：刀越鈍，維持同樣轉速和進給需要越大的力，所以機台的主軸扭矩應該跟著磨耗上升。中間的矩陣列出 21 個訊號特徵和磨耗的相關程度，一格是一把刀；上半部是機台本身就有的 8 個訊號，下半部灰底是測力計，只當參考。這裡用的是斯皮爾曼等級相關係數：它只看排名，問的是「磨耗越大，訊號是不是也越大」，不要求兩者成直線關係，也比較不受極端值影響。刀具磨耗是快、慢、快三段，不是直線，所以用它比較適合。主軸扭矩在每一把刀都有 0.97 以上，九把刀合起來是 0.95，接近測力計橫向力的 0.98。但如果直接用原始扭矩，九把合起來只剩 0.57，因為三台機台的扭矩起點不同，例如第 3 台的新刀扭矩本來就比較低，混在一起排名就亂了。所以要標準化：每把刀的扭矩都除以它自己前 3 到 6 分鐘的中位數，變成「是新刀時的幾倍」。這只用到新刀剛開始的資料，產線上做得到，不需要顯微鏡。右邊的散佈圖，橫軸是磨耗、縱軸是標準化後的扭矩：三台機台都往上升，磨到門檻時大約是新刀的 1.24 到 1.37 倍。所以後面我們選用主軸扭矩當指標：它在每一把刀的相關都最高、每台機台都有而且單位相同，物理意義也最直接，就是刀越鈍越費力。扭矩看得到磨耗趨勢；但相關高只代表趨勢一致，還不代表能決定什麼時候換刀。
 
-**English**: Next we test the hypothesis: a worn tool needs more force to keep the same speed and feed, so the machine's spindle torque should rise with wear. The matrix in the centre shows how strongly each signal follows wear, one cell per end mill. We use Spearman's rank correlation: it only compares rankings, asking whether more wear comes with a larger signal, without assuming a straight-line relation, and it is less affected by outliers. Tool wear goes fast, slow, then fast again, not in a straight line, so this suits it better. Spindle torque exceeds 0.97 for every end mill and reaches 0.95 with all nine pooled, close to the dynamometer's lateral force at 0.98. With raw torque the pooled value drops to 0.57, because the machines start at different torque levels; machine 3, for example, starts lower, so pooling scrambles the ranking. We therefore normalize: each end mill's torque is divided by its own median over its first 3 to 6 minutes, giving "times the new-tool level". This uses only the start of a new tool, so it works in production without a microscope. In the scatter plot on the right, wear is on the x-axis and normalized torque on the y-axis: all three machines rise and reach 1.24 to 1.37 times the new-tool level at the limit. So torque shows the wear trend; but a high correlation only shows a shared trend, not when to replace the tool.
+**English**: Next we test the hypothesis: a worn tool needs more force to keep the same speed and feed, so the machine's spindle torque should rise with wear. The matrix in the centre shows how strongly each of 21 signal features follows wear, one cell per end mill; the upper part holds the 8 signals the machine already records, and the grey lower part the dynamometer, as a reference only. We use Spearman's rank correlation: it only compares rankings, asking whether more wear comes with a larger signal, without assuming a straight-line relation, and it is less affected by outliers. Tool wear goes fast, slow, then fast again, not in a straight line, so this suits it better. Spindle torque exceeds 0.97 for every end mill and reaches 0.95 with all nine pooled, close to the dynamometer's lateral force at 0.98. With raw torque the pooled value drops to 0.57, because the machines start at different torque levels; machine 3, for example, starts lower, so pooling scrambles the ranking. We therefore normalize: each end mill's torque is divided by its own median over its first 3 to 6 minutes, giving "times the new-tool level". This uses only the start of a new tool, so it works in production without a microscope. In the scatter plot on the right, wear is on the x-axis and normalized torque on the y-axis: all three machines rise and reach 1.24 to 1.37 times the new-tool level at the limit. We therefore use spindle torque as the indicator from here on: it has the highest correlation for every end mill, every machine records it in the same unit, and its meaning is the most direct, a worn tool needs more force. Torque shows the wear trend; but a high correlation only shows a shared trend, not when to replace the tool.
 
 ## 2:45–3:25 Q3：能用訊號設定警報嗎？
 - **操作**：
@@ -67,9 +67,9 @@
   5. 指右下的**結論框**。
 - **畫面重點**：計分板四條規則用同一個測試比平均誤差，長條都從 0 開始，漏報用文字另外列出。
 
-**中文**：換刀需要一條警示線：標準化後的扭矩超過多少就換。我們先用兩台機台訂警示線，拿到第三台測試。結果第 1、2 台機台提早 6 到 15 分鐘警示，第 3 台機台的三把刀完全沒響。散佈圖可以看到原因：磨到門檻時，第 3 台的扭矩倍數比較低，用另外兩台訂的線，它碰不到。所以趨勢可以跨機台，警示線不行。改成每台機台各自校正，一樣用留一法測試：平均誤差 4.7 分鐘，一次晚報、一次漏報，比固定時間的 1.7 分鐘差。原因是同一台機台的刀壽命本來就很一致，固定時間已經很準。
+**中文**：換刀需要一條警示線：標準化後的扭矩超過多少就換。我們先用兩台機台訂警示線，拿到第三台測試。結果第 1、2 台機台提早 6 到 15 分鐘警示，第 3 台機台的三把刀完全沒響。散佈圖可以看到原因：磨到門檻時，第 3 台的扭矩倍數比較低，用另外兩台訂的線，它碰不到。所以趨勢可以跨機台，警示線不行。改成每台機台各自校正，一樣用留一交叉驗證測試：平均誤差 4.7 分鐘，一次晚報、一次漏報，比固定時間的 1.7 分鐘差。原因是同一台機台的刀壽命本來就很一致，固定時間已經很準。
 
-**English**: A replacement needs an alarm level: replace when normalized torque exceeds it. We set the level on two machines and test it on the third. Machines 1 and 2 alarm 6 to 15 minutes early, and the three end mills on machine 3 never alarm. The scatter plot shows why: at the limit, machine 3's torque ratio is lower, so a level set on the other two machines is never reached. The trend transfers between machines; the alarm level does not. Calibrated per machine and tested with the same leave-one-out method, the mean error is 4.7 minutes with one late and one missed alarm, worse than 1.7 minutes for the fixed time, because tool lives on one machine are already very similar.
+**English**: A replacement needs an alarm level: replace when normalized torque exceeds it. We set the level on two machines and test it on the third. Machines 1 and 2 alarm 6 to 15 minutes early, and the three end mills on machine 3 never alarm. The scatter plot shows why: at the limit, machine 3's torque ratio is lower, so a level set on the other two machines is never reached. The trend transfers between machines; the alarm level does not. Calibrated per machine and tested with the same leave-one-out cross-validation, the mean error is 4.7 minutes with one late and one missed alarm, worse than 1.7 minutes for the fixed time, because tool lives on one machine are already very similar.
 
 ## 3:25–4:25 Q4：這個跳升真的是磨耗嗎？
 - **操作**：
@@ -125,7 +125,7 @@
 | C5 | 縮圖不能操作，這樣算連動嗎？ | 縮圖就是真的視圖縮小，每次選取都會同步更新；要操作就切到用它的問題，或用 ALL 分頁看全部放大的視圖。 |
 | C5 | 轉場動畫有什麼用？ | 只用在 V3 換正規化或時間範圍時的列重排，讓使用者追得到同一個特徵的位置。 |
 | C6 | 分析元件怎麼幫助形成假設？ | A2 先提出「扭矩跟著磨耗」，A3 用同一個留一法測試能不能換刀，A4 再找出誤差來源；參數都能即時改、立即驗證。 |
-| C6 | 留一法是什麼？為什麼要用？ | 每次留一把刀當測試，只用同機台另外兩把訂規則，三把輪流。這樣每把刀都是「沒看過的新刀」，模擬實際導入；用同一批刀訂規則又評分會太樂觀。 |
+| C6 | 留一交叉驗證是什麼？為什麼要用？ | 機器學習常用的驗證方法（Leave-One-Out Cross-Validation）。每次留一把刀當測試，只用同機台另外兩把訂規則，三把輪流。這樣每把刀都是「沒看過的新刀」，模擬實際導入；用同一批刀訂規則又評分會太樂觀。 |
 | C6 | 為什麼用斯皮爾曼相關，不用皮爾森？ | 斯皮爾曼只看排名，只要求「磨耗越大、訊號越大」，不要求直線關係，也比較不受極端值影響；磨耗是三段式曲線，不是直線。 |
 | C6 | 為什麼要標準化？怎麼做？ | 三台機台的訊號起點不同（新刀扭矩約 1.0–1.35 Nm），直接混在一起合併 ρ 只有 0.57。每把刀除以自己前 3–6 分鐘的中位數，變成「新刀的幾倍」，合併 ρ 升到 0.95。 |
 | C6 | 為什麼放這麼多特徵？ | 21 個特徵（8 個機台訊號、13 個測力計）是讓工程師自己比較、篩選候選，而不是我們先挑好答案；也看得出有些特徵不能用，例如刀齒頻率振幅在第 3 台機台是反向。測力計只作參考，矩陣預設只顯示 2 個代表。 |
