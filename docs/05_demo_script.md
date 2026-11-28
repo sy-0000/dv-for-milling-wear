@@ -1,7 +1,7 @@
 # 05 Demo 講稿（Q1–Q4 介面）
 
 > 對應的報告是 `report/main.tex`（合併版）。數字都來自 `data/verify_expected.json`，或是介面即時算出的值，並已用 `scripts/verify_app.js` 核對。
-> **長度**：現場 demo 5 分鐘，標 ⊕ 的段落可跳過，跳過後約 3 分 30 秒；影片 4–6 分鐘，介面切成 **EN**，旁白用 English 欄。
+> **長度**：現場 demo 5 分鐘，標 ⊕ 的段落或句子可跳過，跳過後約 3 分 40 秒；影片 4–6 分鐘，介面切成 **EN**，旁白用 English 欄。
 > **每一步的格式**：**操作**（點哪裡）→ **畫面重點** → **回答的評分項目** → 中文講稿 → English。
 
 ## 事前準備（開場前 1 分鐘）
@@ -26,16 +26,16 @@
 
 ---
 
-## 0:00–0:35 開場：資料、使用者、假設（Data → Users → Challenges）
+## 0:00–0:40 開場：問題、使用者、資料（Data → Users → Challenges）
 - **操作**：停在 Q1 畫面。滑鼠依序指：左上「WearLens」→ 上方 Q1–Q4 分頁 → 右上 Feature 和 VB limit → 右上 中 / EN。
 - **畫面重點**：介面分成四個問題分頁。每個問題的主視圖放大在中間，其他視圖縮在左邊，右邊固定是計分板和結論框。
 - **回答**：C1（使用者合理嗎？為什麼要 VA？）、邏輯鏈的第 1、2 環。
 
-**中文**：這是 WearLens。使用者是要在多台機台導入刀具監控的製程工程師。導入前他們會先做試驗：在每台機台把刀用到壽命結束，用顯微鏡量磨耗，同時記錄機台訊號。我們用的就是這種公開資料：三台機台、九把刀、6,418 次切削，作者說這是第一份多機台的刀具壽命資料，課程作業沒有用過。產線上不會裝測力計，所以工程師的假設是：刀越鈍，維持同樣轉速和進給要越大力，那**只靠機台本身的扭矩，能不能知道什麼時候該換刀？**上面四個分頁就是這個問題拆成的四步。
+**中文**：在加工產線上，刀具會隨使用磨耗，影響加工品質，所以工廠通常用固定時間換刀。要知道刀實際磨到什麼程度，得停機用顯微鏡量；要量切削力，得裝昂貴的測力計，這兩種都不會出現在一般產線上。WearLens 的使用者是要在多台機台導入刀具監控的製程工程師。導入前，他們會先做試驗：在每台機台把刀用到壽命結束，用顯微鏡量磨耗，同時記錄機台訊號。我們用的就是這種公開試驗資料：三台機台、九把刀、6,418 次切削。我們的問題是：**不用測力計，只靠機台本身記錄的訊號，能不能判斷什麼時候該換刀？**上面四個分頁，就是把這個問題拆成四步。
 
-**English**: This is WearLens. Our users are process engineers who introduce tool monitoring on several machines. Before deployment they run trials: tools are worn out on each machine, wear is measured with a microscope, and machine signals are recorded. We use such an open dataset, three machines, nine end mills and 6,418 runs, the first public multi-machine tool-life dataset. Production has no dynamometer, so the engineer's hypothesis is: a worn tool needs more force to keep the same speed and feed, so **can the machine's own torque tell when to replace the tool?** The four tabs break this question into four steps.
+**English**: In production, cutting tools wear with use and wear affects part quality, so plants usually replace tools after a fixed time. Measuring the actual wear means stopping the machine and using a microscope; measuring cutting force needs an expensive dynamometer. Neither is installed on a normal production line. WearLens is for process engineers who introduce tool monitoring on several machines. Before deployment they run trials: tools are worn out on each machine, wear is measured with a microscope, and machine signals are recorded. We use such an open trial dataset: three machines, nine end mills and 6,418 runs. Our question: **without a dynamometer, can the signals the machine already records tell when to replace the tool?** The four tabs break this question into four steps.
 
-## 0:35–1:30 Q1：全廠用同一個換刀時間好嗎？（CH1 → T1、T2）
+## 0:40–1:35 Q1：全廠用同一個換刀時間好嗎？（CH1 → T1、T2）
 - **操作**：
   1. 點上方分頁 **Q1**。
   2. 指中間 **V1**：三列從上到下分別是 M1、M2、M3，再指虛線（VB 140 µm）。
@@ -46,11 +46,11 @@
 - **畫面重點**：V1 同一列的三把刀幾乎重疊，M2 中段特別平。V2 的長條從 0 開始：深色是用掉的壽命、淺色是浪費的壽命、斜線是超過門檻。
 - **回答**：C2（T1 總覽、T2 比較）、C6（A3 規則評估、留一法）、C7。
 
-**中文**：第一個問題是 T1：先看磨耗曲線總覽。一列一台機台，M2 的中段特別平，要 83 分鐘才到門檻，另外兩台大約 54 到 56 分鐘；同一列的三把刀幾乎重疊。T2：比較換刀規則。全廠用同一個時間 53.5 分鐘，M2 每把刀浪費 34 到 36% 的壽命。改成每台機台各訂一個時間，但這個時間又是用同一批刀訂、同一批刀評分，太樂觀，所以切到留一法：每把刀只用同機台另外兩把來訂。平均誤差 1.7 分鐘，3 次稍微太晚、最多 2 分鐘，沒有漏報。這條就是計分板上的虛線基準，後面的訊號規則要打贏它。
+**中文**：先看最基本的做法：固定時間換刀。T1 是磨耗曲線總覽，一列一台機台。M2 的中段比較平，要 83 分鐘才到門檻，另外兩台大約 54 到 56 分鐘；同一台機台的三把刀則幾乎重疊。要注意，M2 的刀來自另一個批次，所以這個差異分不出是機台還是刀的關係。T2 比較換刀規則。全廠用同一個時間 53.5 分鐘，M2 每把刀會浪費 34 到 36% 的壽命。改成每台機台各訂時間；但用同一批刀訂時間、又用同一批刀評分會太樂觀，所以改用留一法：每次留一把刀測試，只用同機台另外兩把來訂時間。平均誤差 1.7 分鐘，3 次超過門檻、最多 2 分鐘，沒有漏報。這是計分板上的虛線基準，後面的訊號規則都跟它比。
 
-**English**: Q1 starts with T1, an overview of the wear curves: one row per machine. M2's middle phase is flat, so it reaches the limit after 83 minutes instead of 54 to 56, and the three end mills in a row almost overlap. T2 compares rules. One time for all machines, 53.5 minutes, wastes 34 to 36 percent of every M2 end mill. One time per machine is fitted and scored on the same tools, so we switch to leave-one-out: each end mill's time comes from the other two on its machine. Mean error 1.7 minutes, three small overruns, no miss. This is the dashed baseline in the scoreboard that a signal rule must beat.
+**English**: We start with the basic practice, a fixed replacement time. T1 is an overview of the wear curves, one row per machine. M2's middle phase is flatter, so it reaches the limit after 83 minutes instead of 54 to 56, while the three end mills on one machine almost overlap. Note that M2's end mills come from another batch, so machine and batch cannot be separated. T2 compares rules. One time for all machines, 53.5 minutes, wastes 34 to 36 percent of every M2 end mill. We then set one time per machine; fitting and scoring it on the same tools would be optimistic, so we use leave-one-out: each end mill is tested with a time set from the other two on its machine. Mean error 1.7 minutes, three overruns of at most 2 minutes, no miss. This is the dashed baseline in the scoreboard that the signal rules are compared with.
 
-## 1:30–2:30 Q2：扭矩會跟著磨耗上升嗎？（CH2 → T3、T4；檢驗假設）
+## 1:35–2:30 Q2：扭矩會跟著磨耗上升嗎？（CH2 → T3、T4；檢驗假設）
 - **操作**：
   1. 點上方分頁 **Q2**。中間變成 V3 和 V4，V1 縮到左邊。
   2. 在 **V3** 把滑鼠停在「Spindle torque, mean |T|」那列的 **E1** 格子上，tooltip 顯示 ρ；再停在同一列最右邊的 **All** 格子上（0.95）。
@@ -61,11 +61,11 @@
 - **畫面重點**：V3 每列是一個特徵、每欄是一把刀，顏色是 ρ（藍－灰－紅，0 為中點），預設依「最差那把刀的 ρ」排序。測力計那組是灰底，表示只作參考。
 - **回答**：C3、C4（矩陣的理由）、C5（轉場動畫是為了讓人追得到列的位置）、C6（A1 正規化、A2 排名）。
 
-**中文**：第二個問題檢驗我們的假設。T3：用 Spearman 相關替特徵排名。主軸扭矩在每一把刀都有 0.97 以上，九把合併 0.95。這裡用的正規化是除以新刀前 3 到 6 分鐘的水準，產線上做得到、不需要顯微鏡。如果改回原始值，合併只剩 0.57，列也會用動畫重新排，因為三台機台的起點不同。下面灰底的是測力計，Force X 是 0.98，所以機台扭矩和測力計差不多。T4：看 V4，三台機台都往右上升；磨到門檻時，扭矩大約是新刀的 1.24 到 1.37 倍。結論框寫的是：假設在「趨勢」上成立，但趨勢對還不代表能決定什麼時候換刀。
+**中文**：接下來檢驗假設：刀越鈍，維持同樣轉速和進給需要越大的力，所以機台扭矩應該跟著磨耗上升。T3 用 Spearman 相關替特徵排名。主軸扭矩在每一把刀都有 0.97 以上，九把合併是 0.95，接近測力計 Force X 的 0.98。改用原始值的話，合併只剩 0.57，因為三台機台的起始水準不同；所以我們把扭矩除以每把新刀前 3 到 6 分鐘的中位數，這在產線上做得到，不需要顯微鏡。T4 看 V4：三台機台的扭矩都隨磨耗上升，磨到門檻時約為新刀的 1.24 到 1.37 倍。所以扭矩看得到磨耗趨勢；但相關高只代表趨勢一致，還不代表能決定什麼時候換刀。
 
-**English**: Q2 tests the hypothesis. T3 ranks features by Spearman correlation: spindle torque exceeds 0.97 in every end mill and 0.95 pooled, with a normalization by each new tool's first 3 to 6 minutes, which works in production without a microscope. With raw values the pooled value drops to 0.57 and the rows re-sort with an animation, because the machines start at different levels. The dynamometer's Force X reaches 0.98, so machine torque is close to it. T4: in V4 all three machines rise, and at the wear limit torque is 1.24 to 1.37 times the new-tool level. The conclusion box says: the hypothesis holds for the trend, but a trend does not yet set a replacement time.
+**English**: Next we test the hypothesis: a worn tool needs more force to keep the same speed and feed, so machine torque should rise with wear. T3 ranks features by Spearman correlation. Spindle torque exceeds 0.97 in every end mill and reaches 0.95 pooled, close to the dynamometer's Force X at 0.98. With raw values the pooled value drops to 0.57, because the machines start at different levels, so we divide torque by each new tool's median over its first 3 to 6 minutes, which works in production without a microscope. T4: in V4 torque rises with wear on all three machines and reaches 1.24 to 1.37 times the new-tool level at the limit. So torque shows the wear trend; but a high correlation only shows a shared trend, not when to replace the tool.
 
-## 2:30–3:20 Q3：能用訊號設定警報嗎？（CH2、CH1 → T7）
+## 2:30–3:15 Q3：能用訊號設定警報嗎？（CH2、CH1 → T7）
 - **操作**：
   1. 點上方分頁 **Q3**。V2 會自動切到 **signal alarm**，校正方式是 **calibrated on the other machines**（用其他機台校正）。
   2. 指 **V2**：M1、M2 的 ▼ 警示都在長條末端之前，標「… min early」；M3 三列寫「no alarm」。
@@ -75,11 +75,11 @@
 - **畫面重點**：計分板四條規則用同一個測試比平均誤差，長條都從 0 開始，漏報用文字另外列出。
 - **回答**：C6（A3：校正方式、persistence、同一個測試）、C7（回答 CH1 和 CH2）。
 
-**中文**：第三個問題 T7：換刀需要一條警示線，扭矩超過多少就換。先用另外兩台機台訂警示線，拿到第三台測試：M1、M2 提早 6 到 15 分鐘，M3 三把完全沒響。為什麼？看 V4：到了門檻，M3 的扭矩倍數比較低，用 M1、M2 訂的線，M3 永遠碰不到。所以**趨勢可以跨機台，警示線不行**。改成每台機台自己訂、而且用留一法公平測試：平均誤差 4.7 分鐘，一次晚、一次漏報，還是輸給虛線的 1.7 分鐘。原因是同一台機台的刀壽命本來就很一致。
+**中文**：換刀需要一條警示線：扭矩超過多少就換。T7 先用兩台機台訂警示線，拿到第三台測試。M1、M2 提早 6 到 15 分鐘警示，M3 三把完全沒響。V4 可以看到原因：磨到門檻時，M3 的扭矩倍數比較低，用另外兩台訂的線，M3 碰不到。所以趨勢可以跨機台，警示線不行。改成每台機台各自校正、用同樣的留一法測試：平均誤差 4.7 分鐘，一次晚報、一次漏報，比固定時間的 1.7 分鐘差。原因是同一台機台的刀壽命本來就很一致，固定時間已經很準。
 
-**English**: Q3 is T7. A replacement needs an alarm level. Set on the other two machines and tested on the third, it alarms 6 to 15 minutes early on M1 and M2 and never on M3. Why? In V4, M3's torque ratio at the limit is lower, so a level set at M1 and M2's height is never reached: **the trend transfers, the alarm level does not.** Calibrated per machine with the same leave-one-out test, the error is 4.7 minutes with one late and one missed alarm, still worse than the 1.7-minute baseline, because tools on one machine already last almost equally long.
+**English**: A replacement needs an alarm level: replace when torque exceeds it. In T7 the level is set on two machines and tested on the third. M1 and M2 alarm 6 to 15 minutes early, and M3 never alarms. V4 shows why: at the limit M3's torque ratio is lower, so a level set on the other two machines is never reached. The trend transfers between machines; the alarm level does not. Calibrated per machine with the same leave-one-out test, the mean error is 4.7 minutes with one late and one missed alarm, worse than 1.7 minutes for the fixed time, because tool lives on one machine are already very similar.
 
-## 3:20–4:20 Q4：這個跳升真的是磨耗嗎？（CH3 → T5、T6）
+## 3:15–4:15 Q4：這個跳升真的是磨耗嗎？（CH3 → T5、T6）
 - **操作**：
   1. 點上方分頁 **Q4**（會自動選 E1）。中間變成 V5 和 V6。
   2. 指 **V5**：第 15 層上方的洋紅色 **J** 標記、▼ 標籤「alarm: run 443, VB 103 µm」，以及標記層數「Flagged layers: 2 of 222」。
@@ -92,11 +92,11 @@
 - **畫面重點**：V5 的橫軸是第幾個 run；淡色帶是層；洋紅色只用在警示、標記和選取。V6 不同單位分成上下面板，共用時間軸，沒有雙 y 軸。
 - **回答**：C5（點 run 開啟細節、釘選對照）、C6（A4 層級診斷）、C1「為什麼自動化不夠」、C7。
 
-**中文**：最後一個問題：最大的誤差從哪來？是 E1，提早 12.3 分鐘。T5：V5 是 E1 每一個 run 的扭矩，淡色帶是層，每 1 到 2 層刀會被拆下來量磨耗。第 15 層整層跳高 19%，系統標上 J，警示就在這裡響。全部 222 層只有 2 層被標記。T6：我把第 14 層的一個 run 釘住當對照，再點第 15 層。V6 裡扭矩和測力計整段都變高，兩套獨立的量測一起變，所以不是感測器壞了；但第 16 層又掉回來，磨耗不會倒退，所以也不是磨耗。要用延續條件濾掉，得超過一整層、30 個 run，但這樣在同機台校正時九把刀有五把會漏報。這就是為什麼不能全自動：要判斷這是什麼事件，得看兩套訊號和層的結構。我們的規則是：警示落在被標記的層就先檢查，不直接換刀。
+**中文**：最大的警示誤差是 E1，提早 12.3 分鐘，我們追查原因。T5：V5 是 E1 每個 run 的扭矩，淡色帶代表層，刀每 1 到 2 層會被拆下來量磨耗。第 15 層整層跳高 19%，系統標上 J，警示就在這裡響；全部 222 層只有 2 層被標記。T6：我把第 14 層的 run 420 釘住當對照，再點第 15 層的 run 443。V6 裡主軸扭矩和測力計整段都變高，進給軸幾乎沒變；兩套獨立量測一起變，不太像感測器故障。但第 16 層扭矩又回落，磨耗不會倒退，所以這也不是磨耗。⊕ 把延續條件拉長到 30 個 run，E1 只提早 0.5 分鐘；但同樣的設定在同機台、樣本內校正時，九把刀有五把漏報，所以延續條件是誤報和漏報之間的取捨。判斷這種事件要看兩套訊號和層的結構，所以我們的規則是：警示落在被標記的層，先檢查刀，不直接換刀。
 
-**English**: Last question: where does the largest error come from? E1, 12.3 minutes early. T5: V5 shows E1's torque run by run; bands are layers, and the tool is removed for measurement every one or two layers. Layer 15 jumps by 19 percent and is flagged J, exactly where the alarm fires; only 2 of 222 layers are flagged. T6: I pin a run of layer 14 and open one of layer 15. In V6, torque and dynamometer force are higher over the whole run. Two independent chains agree, so it is no sensor fault; but layer 16 falls back, and wear never goes back, so it is not wear either. Filtering it needs a persistence longer than a layer, 30 runs, which leaves five of nine end mills without an alarm under in-sample calibration. This is why full automation is not enough: judging the event needs both signal chains and the layer structure. Our rule: an alarm in a flagged layer triggers an inspection, not a replacement.
+**English**: The largest alarm error is E1, 12.3 minutes early, so we trace its cause. T5: V5 shows E1's torque run by run; bands are layers, and the tool is removed for measurement every one or two layers. Layer 15 jumps by 19 percent and is flagged J, exactly where the alarm fires; only 2 of 222 layers are flagged. T6: I pin run 420 of layer 14 and open run 443 of layer 15. In V6, spindle torque and dynamometer force are higher over the whole run, while the feed axis barely changes. Two independent chains agree, so a sensor fault is unlikely. But torque falls back in layer 16, and wear never goes back, so it is not wear either. ⊕ A persistence of 30 runs moves E1 to 0.5 minutes early, but under in-sample calibration the same setting leaves five of nine end mills without an alarm, so persistence trades false alarms against missed ones. Judging such an event needs both signal chains and the layer structure, so our rule is: an alarm in a flagged layer triggers an inspection, not a replacement.
 
-## ⊕ 4:20–4:40 連動展示（C5）
+## ⊕ 4:15–4:35 連動展示（C5）
 - **操作**：
   1. 點上方分頁 **ALL**（全部視圖）。
   2. 在 **V1** 任一張小圖上水平拖曳，選 20–50 分鐘：V3 的 ρ 重算、列用動畫重排，V4 範圍外的點變淡。在 V1 空白處點一下取消。
@@ -108,12 +108,12 @@
 
 **English**: Finally, the views are linked. Brushing a time range in V1 recomputes V3 and re-sorts its rows, and V4 fades the other runs; brushing in V4 highlights the same runs in V1 and V5. The three views use different x-axes on purpose: three angles on the same runs.
 
-## 4:40–5:00 總結（Insight 回到挑戰與假設）
+## 4:35–5:00 總結（Insight 回到挑戰與假設）
 - **操作**：點回 **Q3**，讓計分板四條長條和結論框一起出現在畫面上。
 
-**中文**：回到開場的假設，三個結論。第一（CH1）：每台機台各訂固定時間最準，1.7 分鐘。第二（CH2）：不用測力計，機台扭矩就看得到磨耗趨勢，和測力計差不多；但警示線不能跨機台，同機台也輸給固定時間，所以只能當每台各自校正的安全網。第三（CH3）：最大的誤差是換層事件，用「被標記就檢查」處理。限制是每台只有 3 把刀、切削條件固定、磨耗多半是內插值。謝謝，這是 WearLens。
+**中文**：回到開場的問題，三個結論。第一，在這組資料裡，每台機台各訂固定時間最準，誤差 1.7 分鐘。第二，主軸扭矩看得到磨耗趨勢，但警示線不能跨機台，同機台校正也只有 4.7 分鐘，所以只適合當安全網。第三，最大的誤差來自換層事件，警示落在被標記的層就先檢查。限制是每台只有 3 把刀、切削條件固定、磨耗多半是內插值；條件會變的產線，結果可能不同。謝謝，這是 WearLens。
 
-**English**: Back to our hypothesis, three takeaways. First (CH1): a fixed time per machine is the most accurate rule, 1.7 minutes. Second (CH2): without a dynamometer, machine torque shows the wear trend about as well as the dynamometer, but its alarm level does not transfer between machines and even per machine it loses to a fixed time, so it is a per-machine safety net. Third (CH3): the largest error is a layer event, handled by inspecting flagged layers. Limitations: three end mills per machine, constant cutting conditions and mostly interpolated wear. Thank you, this was WearLens.
+**English**: Back to our question, three takeaways. First, in this dataset a fixed time per machine is the most accurate rule, with an error of 1.7 minutes. Second, spindle torque shows the wear trend, but its alarm level does not transfer between machines, and per-machine calibration reaches only 4.7 minutes, so it suits a safety net. Third, the largest error comes from a layer event; an alarm in a flagged layer triggers an inspection first. Limitations: three end mills per machine, constant cutting conditions and mostly interpolated wear; on lines where conditions vary, the result may differ. Thank you, this was WearLens.
 
 ---
 
