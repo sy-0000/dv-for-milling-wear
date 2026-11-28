@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WearLens 研究故事線</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#f6f5f1;}a{color:oklch(0.5 0.12 250);}a:hover{color:oklch(0.4 0.12 250);}</style>
+</head>
+<body>
+<div style="width:1600px;box-sizing:border-box;padding:72px 88px 80px;background:#f6f5f1;color:#1f2328;font-family:'Noto Sans TC',sans-serif;">
+
+  <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:40px;padding-bottom:28px;border-bottom:2px solid #1f2328;">
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:15px;letter-spacing:0.12em;color:#5b616b;">WEARLENS · RESEARCH STORYLINE</div>
+      <div style="font-size:46px;font-weight:900;letter-spacing:0.01em;">固定換刀，還是看訊號換刀？</div>
+      <div style="font-size:19px;color:#5b616b;">從「固定換刀造成浪費」出發，測試機台訊號能否成為更可靠的換刀依據</div>
+    </div>
+    <div style="display:flex;gap:18px;font-size:15px;color:#5b616b;flex-shrink:0;">
+      <div style="display:flex;align-items:center;gap:6px;"><div style="width:12px;height:12px;border-radius:3px;background:oklch(0.55 0.12 150);"></div>成立／最佳</div>
+      <div style="display:flex;align-items:center;gap:6px;"><div style="width:12px;height:12px;border-radius:3px;background:oklch(0.65 0.13 75);"></div>部分成立</div>
+      <div style="display:flex;align-items:center;gap:6px;"><div style="width:12px;height:12px;border-radius:3px;background:oklch(0.55 0.15 25);"></div>失敗</div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:170px minmax(0,1fr);margin-top:16px;">
+
+    <!-- 01 背景 -->
+    <div style="position:relative;padding:32px 0;">
+      <div style="position:absolute;left:15px;top:44px;bottom:-44px;width:2px;background:#cfcbc2;"></div>
+      <div style="display:flex;align-items:center;gap:14px;position:relative;">
+        <div style="width:32px;height:32px;border-radius:50%;background:#1f2328;color:#f6f5f1;font-family:'IBM Plex Mono',monospace;font-size:14px;display:flex;align-items:center;justify-content:center;">01</div>
+        <div style="font-size:20px;font-weight:700;">背景</div>
+      </div>
+    </div>
+    <div style="padding:32px 0;border-bottom:1px solid #e2dfd7;display:flex;flex-direction:column;gap:14px;">
+      <div style="font-size:16px;color:#5b616b;">我們手上的資料</div>
+      <div style="display:flex;gap:56px;align-items:baseline;">
+        <div style="display:flex;align-items:baseline;gap:10px;"><span style="font-family:'IBM Plex Mono',monospace;font-size:44px;font-weight:600;">3</span><span style="font-size:19px;">台機台</span></div>
+        <div style="display:flex;align-items:baseline;gap:10px;"><span style="font-family:'IBM Plex Mono',monospace;font-size:44px;font-weight:600;">9</span><span style="font-size:19px;">把刀</span></div>
+        <div style="display:flex;align-items:baseline;gap:10px;"><span style="font-family:'IBM Plex Mono',monospace;font-size:44px;font-weight:600;">6,418</span><span style="font-size:19px;">次切削</span></div>
+      </div>
+    </div>
+
+    <!-- 02 問題 -->
+    <div style="position:relative;padding:32px 0;">
+      <div style="position:absolute;left:15px;top:44px;bottom:-44px;width:2px;background:#cfcbc2;"></div>
+      <div style="display:flex;align-items:center;gap:14px;position:relative;">
+        <div style="width:32px;height:32px;border-radius:50%;background:#1f2328;color:#f6f5f1;font-family:'IBM Plex Mono',monospace;font-size:14px;display:flex;align-items:center;justify-content:center;">02</div>
+        <div style="display:flex;flex-direction:column;gap:4px;"><div style="font-size:20px;font-weight:700;">問題</div><div style="font-family:'IBM Plex Mono',monospace;font-size:14px;color:oklch(0.5 0.12 250);font-weight:600;">Q1</div></div>
+      </div>
+    </div>
+    <div style="padding:32px 0;border-bottom:1px solid #e2dfd7;display:grid;grid-template-columns:minmax(0,1.25fr) 56px minmax(0,1fr);align-items:stretch;">
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div style="font-size:16px;color:#5b616b;">現況：全廠使用同一換刀時間</div>
+        <div style="font-size:26px;font-weight:700;">M2 刀具約 <span style="color:oklch(0.55 0.15 25);">34–36%</span> 的壽命被浪費</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;height:28px;border-radius:4px;overflow:hidden;">
+            <div style="width:65%;background:#1f2328;"></div>
+            <div style="width:35%;background:repeating-linear-gradient(135deg,oklch(0.55 0.15 25) 0 6px,oklch(0.93 0.04 25) 6px 12px);"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:14px;color:#5b616b;"><span>已使用壽命 ≈ 65%</span><span>提早換掉 ≈ 35%</span></div>
+        </div>
+        <div style="font-size:14px;color:#5b616b;line-height:1.55;">全廠換刀時間 53.5 分鐘 = 九把刀中最早磨到門檻（VB 140 µm）的時間；M2 的刀要 81.5–84.0 分鐘才到門檻，浪費 = 1 − 53.5 ÷ 實際壽命。</div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#5b616b;">但</div>
+      <div style="background:#ffffff;border:1px solid #e2dfd7;border-radius:10px;padding:22px 24px;display:flex;flex-direction:column;gap:12px;">
+        <div style="font-size:16px;color:#5b616b;">想改成「看實際磨耗換刀」→ 量測做不到</div>
+        <div style="display:flex;flex-direction:column;gap:8px;font-size:17px;">
+          <div style="display:flex;gap:10px;"><span style="font-weight:700;flex-shrink:0;">磨耗</span><span>需停機用顯微鏡觀察</span></div>
+          <div style="display:flex;gap:10px;"><span style="font-weight:700;flex-shrink:0;">切削力</span><span>需額外測力計</span></div>
+        </div>
+        <div style="font-size:16px;font-weight:700;color:oklch(0.55 0.15 25);">→ 產線難以部署</div>
+      </div>
+    </div>
+
+    <!-- 03 假設 -->
+    <div style="position:relative;padding:32px 0;">
+      <div style="position:absolute;left:15px;top:44px;bottom:-44px;width:2px;background:#cfcbc2;"></div>
+      <div style="display:flex;align-items:center;gap:14px;position:relative;">
+        <div style="width:32px;height:32px;border-radius:50%;background:oklch(0.5 0.12 250);color:#ffffff;font-family:'IBM Plex Mono',monospace;font-size:14px;display:flex;align-items:center;justify-content:center;">03</div>
+        <div style="font-size:20px;font-weight:700;">假設</div>
+      </div>
+    </div>
+    <div style="padding:32px 0;border-bottom:1px solid #e2dfd7;display:flex;flex-direction:column;gap:10px;">
+      <div style="font-size:16px;color:#5b616b;">所以我們假設</div>
+      <div style="font-size:30px;font-weight:900;">刀具越磨耗，負載越大 —— <span style="color:oklch(0.5 0.12 250);">機台自身記錄的訊號</span>，可能取代換刀判準</div>
+    </div>
+
+    <!-- 04 驗證 Q2 -->
+    <div style="position:relative;padding:32px 0;">
+      <div style="position:absolute;left:15px;top:44px;bottom:-44px;width:2px;background:#cfcbc2;"></div>
+      <div style="display:flex;align-items:center;gap:14px;position:relative;">
+        <div style="width:32px;height:32px;border-radius:50%;background:#1f2328;color:#f6f5f1;font-family:'IBM Plex Mono',monospace;font-size:14px;display:flex;align-items:center;justify-content:center;">04</div>
+        <div style="display:flex;flex-direction:column;gap:4px;"><div style="font-size:20px;font-weight:700;">驗證關係</div><div style="font-family:'IBM Plex Mono',monospace;font-size:14px;color:oklch(0.5 0.12 250);font-weight:600;">Q2</div></div>
+      </div>
+    </div>
+    <div style="padding:32px 0;border-bottom:1px solid #e2dfd7;display:flex;justify-content:space-between;align-items:center;gap:32px;">
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div style="font-size:16px;color:#5b616b;">先確認：訊號真的跟磨耗有關嗎？</div>
+        <div style="font-size:22px;font-weight:700;">主軸扭矩與磨耗相關性高；正規化後，跨機台趨勢一致</div>
+      </div>
+      <div style="flex-shrink:0;padding:8px 16px;border-radius:999px;background:oklch(0.95 0.04 150);color:oklch(0.42 0.12 150);font-size:16px;font-weight:700;">假設成立</div>
+    </div>
+
+    <!-- 05 驗證 Q3 -->
+    <div style="position:relative;padding:32px 0;">
+      <div style="position:absolute;left:15px;top:44px;bottom:-44px;width:2px;background:#cfcbc2;"></div>
+      <div style="display:flex;align-items:center;gap:14px;position:relative;">
+        <div style="width:32px;height:32px;border-radius:50%;background:#1f2328;color:#f6f5f1;font-family:'IBM Plex Mono',monospace;font-size:14px;display:flex;align-items:center;justify-content:center;">05</div>
+        <div style="display:flex;flex-direction:column;gap:4px;"><div style="font-size:20px;font-weight:700;">實際應用</div><div style="font-family:'IBM Plex Mono',monospace;font-size:14px;color:oklch(0.5 0.12 250);font-weight:600;">Q3 · Q4</div></div>
+      </div>
+    </div>
+    <div style="padding:32px 0;border-bottom:1px solid #e2dfd7;display:flex;flex-direction:column;gap:22px;">
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div style="font-size:16px;color:#5b616b;">再測試：把訊號轉成短期警報線，能贏過固定換刀嗎？</div>
+        <div style="font-size:22px;font-weight:700;">兩種警報做法 vs. 基準，比較預測誤差（MAE，分鐘，越短越好）</div>
+      </div>
+      <div style="background:#ffffff;border:1px solid #e2dfd7;border-radius:10px;padding:16px 22px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;font-size:15px;line-height:1.55;"><div><b>誤差</b> = 規則說要換刀的時間 − 刀實際磨到 VB 140 µm 的時間（累計切削時間，分鐘）。負 = 太早換，正 = 太晚換。</div><div><b>MAE</b>（平均絕對誤差）= 每把刀 |誤差| 的平均。沒觸發警報的刀算<b>漏報</b>，不算進平均，另外列出。</div><div><b>留一交叉驗證（LOO）</b>：每次留一把刀當測試，只用其他刀來訂規則，輪流做完九把，避免用同一批刀訂規則又評分。</div></div>
+
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr);gap:20px;">
+        <div style="background:#ffffff;border:1px solid #e2dfd7;border-top:5px solid oklch(0.55 0.12 150);border-radius:10px;padding:22px 24px;display:flex;flex-direction:column;gap:12px;">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:0.1em;color:#5b616b;">基準 BASELINE</div>
+          <div style="font-size:20px;font-weight:700;">每台機台固定時間</div>
+          <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-family:'IBM Plex Mono',monospace;font-size:40px;font-weight:600;color:oklch(0.45 0.12 150);">1.7</span><span style="font-size:16px;color:#5b616b;">分鐘 · LOO MAE</span></div>
+          <div style="position:relative;height:12px;background:#efede7;border-radius:3px;"><div style="width:34%;height:100%;background:oklch(0.55 0.12 150);border-radius:3px;"></div></div>
+          <div style="font-size:16px;">最準確，且無漏報</div>
+          <div style="padding:12px 14px;background:#f6f5f1;border-radius:8px;display:flex;flex-direction:column;gap:6px;font-size:14px;line-height:1.55;color:#1f2328;"><div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:0.1em;color:#5b616b;">計算方式</div><div>換刀時間 = 同機台<b>另外兩把刀</b>中最早到門檻的時間。</div><div>例：E1 → min(56.5, 57.9) = 56.5；實際 54.5 → 誤差 +2.0</div><div>九把 |誤差|：2.0、2.0、3.4、2.0、2.0、2.5、0.2、0.8、0.2</div><div>MAE = 15.1 ÷ 9 ≈ <b>1.7</b>；3 把稍晚（≤ 2 分鐘）</div></div>
+        </div>
+        <div style="background:#ffffff;border:1px solid #e2dfd7;border-top:5px solid oklch(0.55 0.15 25);border-radius:10px;padding:22px 24px;display:flex;flex-direction:column;gap:12px;">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:0.1em;color:#5b616b;">做法 A</div>
+          <div style="font-size:20px;font-weight:700;">跨機台警報</div>
+          <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-size:34px;font-weight:900;color:oklch(0.5 0.15 25);">失敗</span><span style="font-size:16px;color:#5b616b;">MAE 11.3 分鐘 · 3 把漏報</span></div>
+          <div style="height:12px;border-radius:3px;border:1.5px dashed oklch(0.7 0.1 25);box-sizing:border-box;"></div>
+          <div style="font-size:16px;">M3 三把刀皆未觸發警報 —— 訊號<b>趨勢</b>可轉移，<b>門檻</b>不可直接轉移</div>
+          <div style="padding:12px 14px;background:#f6f5f1;border-radius:8px;display:flex;flex-direction:column;gap:6px;font-size:14px;line-height:1.55;color:#1f2328;"><div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:0.1em;color:#5b616b;">計算方式</div><div>警報線 = <b>另外兩台機台</b>的刀在 VB 140 µm 時，標準化扭矩的中位數。</div><div>標準化扭矩 = 扭矩 ÷ 這把刀前 3–6 分鐘的中位數（新刀的幾倍）。</div><div>結果：M1、M2 提早 5.8–14.7 分鐘（MAE 11.3，6 把）；M3 的扭矩倍數較低，三把都碰不到警報線。</div></div>
+        </div>
+        <div style="background:#ffffff;border:1px solid #e2dfd7;border-top:5px solid oklch(0.65 0.13 75);border-radius:10px;padding:22px 24px;display:flex;flex-direction:column;gap:12px;">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:0.1em;color:#5b616b;">做法 B</div>
+          <div style="font-size:20px;font-weight:700;">同機台校正</div>
+          <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-family:'IBM Plex Mono',monospace;font-size:40px;font-weight:600;color:oklch(0.5 0.12 75);">4.7</span><span style="font-size:16px;color:#5b616b;">分鐘 · 約基準 2.8 倍</span></div>
+          <div style="position:relative;height:12px;background:#efede7;border-radius:3px;"><div style="width:94%;height:100%;background:oklch(0.65 0.13 75);border-radius:3px;"></div><div style="position:absolute;left:34%;top:-4px;bottom:-4px;width:2px;background:oklch(0.45 0.12 150);"></div></div>
+          <div style="font-size:16px;">仍不如基準，出現晚報／漏報</div>
+          <div style="padding:12px 14px;background:#f6f5f1;border-radius:8px;display:flex;flex-direction:column;gap:6px;font-size:14px;line-height:1.55;color:#1f2328;"><div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:0.1em;color:#5b616b;">計算方式</div><div>警報線 = <b>同機台另外兩把刀</b>在 VB 140 µm 時，標準化扭矩的中位數（E1：1.333 倍）。</div><div>警報時間 = 過去 15 次切削的扭矩中位數第一次超過警報線。</div><div>例：E1 在 42.2 分鐘觸發；實際 54.5 → 誤差 −12.3</div><div>八把 |誤差| 總和 37.3 ÷ 8 ≈ <b>4.7</b>；E5 漏報、E3 晚 2.7</div></div>
+          <div style="margin-top:4px;padding:14px 16px;background:oklch(0.97 0.03 75);border-radius:8px;display:flex;flex-direction:column;gap:6px;">
+            <div style="font-size:14px;font-weight:700;color:oklch(0.45 0.12 75);">↳ Q4 追查誤報原因</div>
+            <div style="font-size:16px;">第 15 層跳升 19%，第 16 層即回落 → 單層異常不等於持續磨耗</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 06 結論 -->
+    <div style="position:relative;padding:36px 0;">
+      <div style="display:flex;align-items:center;gap:14px;position:relative;">
+        <div style="width:32px;height:32px;border-radius:50%;background:oklch(0.5 0.12 250);color:#ffffff;font-family:'IBM Plex Mono',monospace;font-size:14px;display:flex;align-items:center;justify-content:center;">06</div>
+        <div style="font-size:20px;font-weight:700;">結論</div>
+      </div>
+    </div>
+    <div style="padding:36px 0 0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr);gap:20px;">
+      <div style="background:#1f2328;color:#f6f5f1;border-radius:10px;padding:24px 26px;display:flex;flex-direction:column;gap:8px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:0.1em;color:#b9bcc2;">主要規則</div>
+        <div style="font-size:22px;font-weight:700;">固定換刀時間（依機台設定）</div>
+      </div>
+      <div style="background:#1f2328;color:#f6f5f1;border-radius:10px;padding:24px 26px;display:flex;flex-direction:column;gap:8px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:0.1em;color:#b9bcc2;">輔助</div>
+        <div style="font-size:22px;font-weight:700;">訊號警報作為安全網</div>
+      </div>
+      <div style="background:#1f2328;color:#f6f5f1;border-radius:10px;padding:24px 26px;display:flex;flex-direction:column;gap:8px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:0.1em;color:#b9bcc2;">警報響起時</div>
+        <div style="font-size:22px;font-weight:700;">異常層先檢查，而非直接換刀</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>
